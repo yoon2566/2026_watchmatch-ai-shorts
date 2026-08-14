@@ -1,0 +1,10 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="watchmatch" x1="8" y1="4" x2="57" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8A8FF"/>
+      <stop offset="1" stop-color="#6F3BD1"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 4H45C53.2843 4 60 10.7157 60 19V45C60 53.2843 53.2843 60 45 60H19C10.7157 60 4 53.2843 4 45V14L14 4Z" fill="url(#watchmatch)"/>
+  <path d="M19 21L24 43M32 17V47M45 21L40 43" stroke="white" stroke-width="6" stroke-linecap="round"/>
+</svg>
