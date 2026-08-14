@@ -14,6 +14,7 @@ type Recommendation = {
   premise: string;
   reason: string;
   rating: string;
+  checkedAt: string;
   sources: Array<{label: string; url: string}>;
 };
 
@@ -47,106 +48,13 @@ const MOODS = [
   {value: "spectacular", label: "압도적인", symbol: "✦"},
 ];
 
-const MOOD_GENRES: Record<string, string[]> = {
-  thrilling: ["스릴러", "액션", "범죄", "SF"],
-  warm: ["드라마", "로맨스", "코미디", "애니메이션", "가족"],
-  mysterious: ["미스터리", "스릴러", "판타지", "SF"],
-  funny: ["코미디", "애니메이션", "가족"],
-  moving: ["드라마", "로맨스", "판타지", "애니메이션"],
-  spectacular: ["액션", "SF", "판타지", "모험"],
-};
-
-const MOVIES: Recommendation[] = [
-  {
-    id: "big-buck-bunny",
-    title: "Big Buck Bunny",
-    year: 2008,
-    mediaType: "movie",
-    genres: ["애니메이션", "코미디"],
-    premise: "평온을 방해하는 작은 동물들에게 맞서는 큰 토끼의 짧은 애니메이션입니다.",
-    reason: "유쾌한 애니메이션과 짧은 역전의 흐름을 가볍게 즐기기 좋습니다.",
-    rating: "TV-PG",
-    sources: [
-      {label: "Blender Studio", url: "https://studio.blender.org/films/big-buck-bunny/"},
-      {label: "Netflix", url: "https://www.netflix.com/title/70159351"},
-    ],
-  },
-  {
-    id: "sintel",
-    title: "Sintel",
-    year: 2010,
-    mediaType: "movie",
-    genres: ["애니메이션", "판타지"],
-    premise: "한 젊은 여성이 소중한 용을 찾아 낯선 여정을 떠나는 단편 애니메이션입니다.",
-    reason: "판타지 여정의 분위기와 짧고 집중도 높은 서사를 선호한다면 잘 맞습니다.",
-    rating: "TV-PG",
-    sources: [
-      {label: "Blender Studio", url: "https://studio.blender.org/films/sintel/"},
-      {label: "Netflix", url: "https://www.netflix.com/title/70229101"},
-    ],
-  },
-  {
-    id: "tears-of-steel",
-    title: "Tears of Steel",
-    year: 2012,
-    mediaType: "movie",
-    genres: ["SF", "애니메이션"],
-    premise: "인간과 로봇이 충돌하는 미래를 배경으로 한 실사·시각효과 단편입니다.",
-    reason: "SF 분위기와 실사·시각효과가 만나는 짧은 이야기를 보고 싶을 때 잘 맞습니다.",
-    rating: "TV-14",
-    sources: [
-      {label: "Blender Studio", url: "https://studio.blender.org/films/tears-of-steel/"},
-      {label: "Netflix", url: "https://www.netflix.com/title/80006943"},
-    ],
-  },
-];
-
-const TELEVISION: Recommendation[] = [
-  {
-    id: "bluey",
-    title: "Bluey",
-    year: 2018,
-    mediaType: "tv",
-    genres: ["애니메이션", "가족"],
-    premise: "상상력 넘치는 놀이를 즐기는 강아지 가족의 일상을 그린 애니메이션입니다.",
-    reason: "짧고 따뜻한 에피소드와 가족의 유쾌한 호흡을 편안하게 즐기기 좋습니다.",
-    rating: "TV-Y",
-    sources: [
-      {label: "Bluey", url: "https://www.bluey.tv/"},
-      {label: "Disney+", url: "https://www.disneyplus.com/browse/entity-fa6973b9-e7cf-49fb-81a2-d4908e4bf694"},
-    ],
-  },
-  {
-    id: "strange-new-worlds",
-    title: "Star Trek: Strange New Worlds",
-    year: 2022,
-    mediaType: "tv",
-    genres: ["SF", "모험"],
-    premise: "우주 탐사선의 승무원들이 새로운 세계를 향해 항해하는 SF 시리즈입니다.",
-    reason: "새로운 세계를 탐험하는 모험과 팀의 호흡을 좋아한다면 잘 맞습니다.",
-    rating: "TV-14",
-    sources: [
-      {label: "Star Trek", url: "https://www.startrek.com/en-un/series/star-trek-strange-new-worlds"},
-      {label: "Paramount+", url: "https://www.paramountplus.com/shows/star-trek-strange-new-worlds/"},
-    ],
-  },
-  {
-    id: "the-mandalorian",
-    title: "The Mandalorian",
-    year: 2019,
-    mediaType: "tv",
-    genres: ["SF", "모험"],
-    premise: "은하 변방을 떠도는 현상금 사냥꾼의 여정을 따라가는 시리즈입니다.",
-    reason: "서부극 같은 우주 모험과 과묵한 주인공의 여정을 보고 싶을 때 어울립니다.",
-    rating: "TV-14",
-    sources: [
-      {label: "Star Wars", url: "https://www.starwars.com/series/the-mandalorian"},
-      {label: "Disney+", url: "https://www.disneyplus.com/browse/entity-422f6dcc-226f-44e7-98d4-22de69b31cf3"},
-    ],
-  },
-];
-
 const PIPELINE_STEPS = ["대본", "장면 1", "장면 2", "장면 3", "음성", "편집", "검증", "완료"];
+
+function formatCheckedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "방금";
+  return new Intl.DateTimeFormat("ko-KR", {dateStyle: "medium"}).format(date);
+}
 
 function BrandMark({small = false}: {small?: boolean}) {
   return (
@@ -205,7 +113,7 @@ function RecommendationCard({
         <span>{recommendation.mediaType === "movie" ? "영화" : "TV 시리즈"}</span>
         <span>등급 {recommendation.rating}</span>
         <span className="safe-badge">스포일러 없음</span>
-        <span className="demo-badge">공개 데모</span>
+        <span className="demo-badge">실시간 검색</span>
       </div>
       <h3>{recommendation.title}</h3>
       <div className="genre-row" aria-label="장르">
@@ -223,7 +131,7 @@ function RecommendationCard({
         </div>
       </div>
       <div className="source-row">
-        <span>고정 데모 정보 · 2026.08.10</span>
+        <span>정보 확인 · {formatCheckedAt(recommendation.checkedAt)}</span>
         <span className="source-links">
           {recommendation.sources.map((source) => (
             <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
@@ -242,20 +150,13 @@ export default function WatchMatchHosted() {
   const [genres, setGenres] = useState<string[]>(["미스터리"]);
   const [mood, setMood] = useState("mysterious");
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [productionRun, setProductionRun] = useState(0);
-  const recommendationTimerRef = useRef<number | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
-  const recommendations = useMemo(() => {
-    const base = mediaType === "movie" ? MOVIES : TELEVISION;
-    const moodGenres = MOOD_GENRES[mood] ?? [];
-    const score = (item: Recommendation) =>
-      item.genres.filter((genre) => genres.includes(genre)).length * 3
-      + item.genres.filter((genre) => moodGenres.includes(genre)).length;
-
-    return [...base].sort((left, right) => score(right) - score(left));
-  }, [genres, mediaType, mood]);
   const selected = useMemo(
     () => recommendations.find((item) => item.id === selectedId) ?? null,
     [recommendations, selectedId],
@@ -276,17 +177,15 @@ export default function WatchMatchHosted() {
   }, [productionRun, scene]);
 
   useEffect(() => () => {
-    if (recommendationTimerRef.current !== null) {
-      window.clearTimeout(recommendationTimerRef.current);
-    }
+    searchAbortRef.current?.abort();
   }, []);
 
   const reset = () => {
-    if (recommendationTimerRef.current !== null) {
-      window.clearTimeout(recommendationTimerRef.current);
-      recommendationTimerRef.current = null;
-    }
+    searchAbortRef.current?.abort();
+    searchAbortRef.current = null;
     setSearching(false);
+    setSearchError("");
+    setRecommendations([]);
     setScene("home");
     setSelectedId(null);
     setProgress(0);
@@ -301,17 +200,45 @@ export default function WatchMatchHosted() {
     });
   };
 
-  const findRecommendations = () => {
-    if (recommendationTimerRef.current !== null) {
-      window.clearTimeout(recommendationTimerRef.current);
-    }
+  const findRecommendations = async () => {
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
     setSearching(true);
+    setSearchError("");
     setSelectedId(null);
-    recommendationTimerRef.current = window.setTimeout(() => {
-      recommendationTimerRef.current = null;
-      setSearching(false);
+    setRecommendations([]);
+
+    try {
+      const response = await fetch("/api/recommendations", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({mediaType, genres, mood}),
+        signal: controller.signal,
+      });
+      const payload = await response.json() as {
+        recommendations?: Recommendation[];
+        error?: {message?: string};
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error?.message || "작품을 검색하지 못했습니다.");
+      }
+      if (!Array.isArray(payload.recommendations) || payload.recommendations.length !== 3) {
+        throw new Error("검증된 작품 3개를 받지 못했습니다. 다시 시도해 주세요.");
+      }
+      if (controller.signal.aborted) return;
+      setRecommendations(payload.recommendations);
       setScene("recommendations");
-    }, 650);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setSearchError(error instanceof Error ? error.message : "작품 검색에 실패했습니다.");
+    } finally {
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null;
+        setSearching(false);
+      }
+    }
   };
 
   const startProduction = () => {
@@ -330,7 +257,7 @@ export default function WatchMatchHosted() {
           <BrandMark />
           <span>WatchMatch</span>
         </button>
-        <span className="hosted-demo-pill"><span aria-hidden="true">●</span> PUBLIC DEMO</span>
+        <span className="hosted-demo-pill"><span aria-hidden="true">●</span> LIVE DISCOVERY</span>
       </header>
 
       <main id="top">
@@ -347,19 +274,19 @@ export default function WatchMatchHosted() {
               <button type="button" className="primary-button hero-start-button" onClick={() => setScene("preferences")}>
                 추천 시작하기 <span aria-hidden="true">→</span>
               </button>
-              <span>공개본은 미리 검증한 추천·영상 샘플을 사용하는 체험판입니다.</span>
+              <span>작품 추천은 실시간 검색이며, 영상 단계는 검증된 기술 샘플을 사용합니다.</span>
             </div>
             <div className="mode-notice demo" role="status">
               <span className="notice-icon" aria-hidden="true">◇</span>
-              <div><strong>PUBLIC DEMO</strong><p>새 영상 생성 없이 5단계 화면과 완성 샘플을 체험할 수 있어요.</p></div>
-              <span className="notice-status">체험 준비됨</span>
+              <div><strong>LIVE DISCOVERY</strong><p>OpenRouter 웹 검색으로 실제 영화·TV 작품 3개를 찾아요.</p></div>
+              <span className="notice-status">실시간 검색</span>
             </div>
           </section>
         ) : null}
 
         {scene === "preferences" ? (
           <section className="preference-panel flow-screen" aria-labelledby="preference-title">
-            <button type="button" className="screen-back-button" onClick={() => setScene("home")}><span aria-hidden="true">←</span> 메인으로</button>
+            <button type="button" className="screen-back-button" onClick={reset}><span aria-hidden="true">←</span> 메인으로</button>
             <div className="section-heading">
               <div><p className="step-kicker">02 · 장르 및 세부 사항 선택</p><h2 id="preference-title">오늘은 어떤 이야기가 당기나요?</h2></div>
               <p>장르는 최대 3개까지 고를 수 있어요.</p>
@@ -367,8 +294,8 @@ export default function WatchMatchHosted() {
             <fieldset className="choice-group media-choice">
               <legend>작품 유형</legend>
               <div className="segmented-control">
-                <button type="button" className={mediaType === "movie" ? "is-selected" : ""} aria-pressed={mediaType === "movie"} onClick={() => {setMediaType("movie"); setSelectedId(null);}}><span>영화</span><small>한 편에 몰입</small></button>
-                <button type="button" className={mediaType === "tv" ? "is-selected" : ""} aria-pressed={mediaType === "tv"} onClick={() => {setMediaType("tv"); setSelectedId(null);}}><span>TV 시리즈</span><small>길게 정주행</small></button>
+                <button type="button" className={mediaType === "movie" ? "is-selected" : ""} aria-pressed={mediaType === "movie"} onClick={() => {setMediaType("movie"); setSelectedId(null); setRecommendations([]); setSearchError("");}}><span>영화</span><small>한 편에 몰입</small></button>
+                <button type="button" className={mediaType === "tv" ? "is-selected" : ""} aria-pressed={mediaType === "tv"} onClick={() => {setMediaType("tv"); setSelectedId(null); setRecommendations([]); setSearchError("");}}><span>TV 시리즈</span><small>길게 정주행</small></button>
               </div>
             </fieldset>
             <fieldset className="choice-group">
@@ -387,9 +314,10 @@ export default function WatchMatchHosted() {
                 {MOODS.map((option) => <button type="button" key={option.value} className={mood === option.value ? "is-selected" : ""} aria-pressed={mood === option.value} onClick={() => setMood(option.value)}><span className="mood-symbol" aria-hidden="true">{option.symbol}</span><span>{option.label}</span></button>)}
               </div>
             </fieldset>
-            <p className="demo-choice-note"><span aria-hidden="true">◇</span> 공개 데모에서는 선택한 취향이 고정 후보 3개의 추천 순서에 반영됩니다.</p>
+            <p className="demo-choice-note"><span aria-hidden="true">◇</span> 선택한 조건으로 최신 웹 정보를 검색하고, 출처와 시청 등급을 확인한 작품만 보여줍니다.</p>
+            {searchError ? <p className="inline-error" role="alert">{searchError}</p> : null}
             <button type="button" className="primary-button search-button" onClick={findRecommendations} disabled={searching}>
-              {searching ? <><span className="button-spinner" aria-hidden="true" /> 작품을 찾는 중</> : <>내 취향 작품 3개 찾기 <span aria-hidden="true">→</span></>}
+              {searching ? <><span className="button-spinner" aria-hidden="true" /> 실제 작품을 검색하는 중</> : <>내 취향 실제 작품 3개 찾기 <span aria-hidden="true">→</span></>}
             </button>
           </section>
         ) : null}
@@ -414,7 +342,7 @@ export default function WatchMatchHosted() {
         {scene === "production" ? (
           <section className="project-section flow-screen production-screen" aria-labelledby="production-title">
             <section className="pipeline-panel">
-              <div className="pipeline-heading"><div><p className="eyebrow">04 · 영상 제작 중</p><h2 id="production-title">{selected?.title}</h2></div><span className="render-id">PUBLIC DEMO</span></div>
+              <div className="pipeline-heading"><div><p className="eyebrow">04 · 영상 제작 중</p><h2 id="production-title">{selected?.title}</h2></div><span className="render-id">VIDEO DEMO</span></div>
               <div className="active-job"><div className="job-orbit" aria-hidden="true"><span /></div><div><p aria-live="polite">{PIPELINE_STEPS[activePipelineIndex]}</p><span>공개 체험판용 준비 과정을 보여드리고 있어요.</span></div><strong>{progress}%</strong></div>
               <div className="progress-track" role="progressbar" aria-label="쇼츠 준비 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{width: `${progress}%`}} /></div>
               <ol className="pipeline-steps">
@@ -458,7 +386,7 @@ export default function WatchMatchHosted() {
 
       <footer className="site-footer">
         <div className="footer-brand"><BrandMark small /><strong>WatchMatch</strong></div>
-        <p>공개본은 체험용 고정 추천과 AI 생성 기술 샘플을 사용합니다. 실제 새 영상 생성은 로컬 WatchMatch 앱에서 처리됩니다.</p>
+        <p>작품 추천은 OpenRouter 웹 검색으로 처리합니다. 영상 단계는 AI 생성 기술 샘플이며, 실제 새 영상 생성은 로컬 WatchMatch 앱에서 처리됩니다.</p>
         <span>© 2026 WatchMatch Prototype</span>
       </footer>
     </div>

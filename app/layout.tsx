@@ -24,14 +24,14 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase,
     title: "WatchMatch | 25초 무스포 추천 쇼츠",
     description:
-      "장르와 분위기를 고르고 작품 3편 추천부터 25초 쇼츠 완성까지 체험하는 WatchMatch 공개 데모입니다.",
+      "장르와 분위기를 고르면 실제 영화·TV 작품 3편을 웹에서 찾아주는 WatchMatch 무스포 추천 서비스입니다.",
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
     },
     openGraph: {
       title: "WatchMatch | 25초 무스포 추천 쇼츠",
-      description: "볼까 말까, 25초면 충분해. AI 무스포 작품 추천 쇼츠 공개 데모.",
+      description: "볼까 말까, 25초면 충분해. 실제 작품을 검색하는 AI 무스포 추천.",
       type: "website",
       locale: "ko_KR",
       images: [

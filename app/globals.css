@@ -147,6 +147,16 @@ button:disabled {
   color: var(--purple-bright);
 }
 
+.inline-error {
+  padding: 13px 15px;
+  border: 1px solid rgba(255, 125, 145, 0.35);
+  border-radius: 14px;
+  color: #ffd4db;
+  background: rgba(255, 125, 145, 0.09);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 .brand,
 .footer-brand {
   display: inline-flex;
