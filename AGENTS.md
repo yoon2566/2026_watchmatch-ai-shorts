@@ -26,3 +26,11 @@
 - Record material validation results and known limitations in `PROJECT_STATUS.md`.
 - Append every material user-requested change to `docs/WORKLOG.md` with its request, decision, verification, commit or PR, deployment state, and remaining limits.
 - Update `docs/ENGINEERING_LOG.md` when architecture, API behavior, or verified system capabilities materially change.
+
+## Required handoff after every change
+
+- After the relevant checks pass, commit and push the current branch to GitHub.
+- Ensure the current local application is reachable at `http://localhost:3100` and report that exact test URL to the user.
+- Reuse a healthy existing local server. If the server is not running, start it with `npm.cmd run dev:local` and keep it available for the user's testing.
+- Never terminate an unrelated process merely because it owns port 3100. Report the conflict and choose a safe next step.
+- A GitHub push and local preview do not authorize a Sites deployment; deployment still requires a separate explicit request.

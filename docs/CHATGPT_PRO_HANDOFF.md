@@ -27,6 +27,8 @@ The original conversation is intentionally not required after these files are re
 - implement approved changes;
 - run lint, TypeScript, build, tests, and proportionate live checks;
 - commit and push the verified change;
+- keep the verified local preview reachable at `http://localhost:3100` and give
+  that address to the user after each change;
 - update `PROJECT_STATUS.md` and `docs/ENGINEERING_LOG.md` when the state changes materially.
 
 ### User
@@ -87,6 +89,7 @@ ChatGPT Pro should propose the schema, migration path, test matrix, and UI label
 - No secret appears in tracked files, logs, API responses, or browser bundles.
 - Relevant tests pass.
 - Any bounded live API check and its cost are disclosed.
+- The current branch is pushed and `http://localhost:3100` returns a successful response.
 - `PROJECT_STATUS.md` and this engineering log reflect the new state.
 - The verified commit is pushed and a Draft PR is available for review.
 

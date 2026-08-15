@@ -5,6 +5,22 @@ rewrite earlier entries to make the project look more complete than it was.
 When a change is pushed, add a new entry with the request, decision, evidence,
 Git state, deployment state, and remaining limits.
 
+## 2026-08-15 - Require GitHub push and local preview handoff
+
+- User request: after every task, push the verified change to GitHub and provide
+  a local server address that can be tested immediately.
+- Decision:
+  - GitHub push is a required completion step after relevant checks pass;
+  - the local handoff URL is `http://localhost:3100`;
+  - reuse a healthy existing server or start `npm.cmd run dev:local` when absent;
+  - keep Sites deployment separate and require explicit authorization.
+- Status: verified on branch `agent/chatgpt-pro-handoff`; the resulting commit
+  and push are recorded in the follow-up work-log update.
+- Verification: documentation links and diff checks passed; the existing local
+  server returned HTTP 200 at `http://localhost:3100`.
+- Draft PR: <https://github.com/yoon2566/2026_watchmatch-ai-shorts/pull/1>
+- Deployment: not requested and not performed.
+
 ## 2026-08-15 - Preserve URL-only OpenRouter citations
 
 - User request: apply the ChatGPT Pro review so successful search sources do not
