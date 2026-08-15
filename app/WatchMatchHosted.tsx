@@ -2,53 +2,9 @@
 
 import {useEffect, useMemo, useRef, useState} from "react";
 
-type Scene = "home" | "preferences" | "recommendations" | "production" | "result";
+type Scene = "media" | "genre" | "era" | "recommendations" | "production" | "result";
 type MediaType = "movie" | "tv";
-
-type Recommendation = {
-  id: string;
-  title: string;
-  year: number;
-  mediaType: MediaType;
-  genres: string[];
-  premise: string;
-  reason: string;
-  rating: string;
-  checkedAt: string;
-  availability: {
-    provider: "netflix";
-    region: "KR";
-    accessMode: "subscription";
-    status: "verified_manual";
-    checkedAt: string;
-    expiresAt: string;
-    sourceUrl: string;
-  };
-  sources: Array<{label: string; url: string}>;
-};
-
-type DiscoverySource = {
-  url: string;
-  title: string;
-  domain: string;
-  excerpt: string;
-};
-
-type DiscoveryStatus = "complete" | "partial" | "sources_only" | "empty";
-
-type DiscoverySummary = {
-  citationCount: number;
-  candidateCount: number;
-  rejectedCount: number;
-};
-
-const FLOW_STEPS: Array<{scene: Scene; label: string}> = [
-  {scene: "home", label: "메인"},
-  {scene: "preferences", label: "취향 선택"},
-  {scene: "recommendations", label: "작품 선택"},
-  {scene: "production", label: "영상 제작"},
-  {scene: "result", label: "영상 보기"},
-];
+type Era = "classic" | "modern" | "recent";
 
 const GENRES = [
   "드라마",
@@ -61,24 +17,44 @@ const GENRES = [
   "액션",
   "범죄",
   "애니메이션",
+] as const;
+
+type AllowedGenre = (typeof GENRES)[number];
+
+type Recommendation = {
+  id: string;
+  title: string;
+  year: number;
+  mediaType: MediaType;
+  genres: string[];
+  premise: string;
+  reason: string;
+  source: {label: string; url: string};
+  era: Era;
+};
+
+type RecommendationMeta = {
+  remaining: number;
+  cycleReset: boolean;
+};
+
+const FLOW_STEPS: Array<{scene: Scene; label: string}> = [
+  {scene: "media", label: "영화·TV"},
+  {scene: "genre", label: "장르"},
+  {scene: "era", label: "시대"},
+  {scene: "recommendations", label: "작품 선택"},
+  {scene: "production", label: "영상 제작"},
+  {scene: "result", label: "영상 보기"},
 ];
 
-const MOODS = [
-  {value: "thrilling", label: "쫄깃한", symbol: "↗"},
-  {value: "warm", label: "따뜻한", symbol: "○"},
-  {value: "mysterious", label: "미스터리한", symbol: "?"},
-  {value: "funny", label: "유쾌한", symbol: "+"},
-  {value: "moving", label: "먹먹한", symbol: "≈"},
-  {value: "spectacular", label: "압도적인", symbol: "✦"},
+const ERAS: Array<{value: Era; label: string; years: string; description: string; symbol: string}> = [
+  {value: "classic", label: "고전", years: "1999년까지", description: "시간이 지나도 사랑받는 작품", symbol: "◷"},
+  {value: "modern", label: "근래", years: "2000–2019년", description: "익숙함과 새로움이 공존하는 작품", symbol: "◇"},
+  {value: "recent", label: "최근", years: "2020년부터", description: "지금의 감각을 담은 작품", symbol: "✦"},
 ];
 
 const PIPELINE_STEPS = ["대본", "장면 1", "장면 2", "장면 3", "음성", "편집", "검증", "완료"];
-
-function formatCheckedAt(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "방금";
-  return new Intl.DateTimeFormat("ko-KR", {dateStyle: "medium"}).format(date);
-}
+const SEEN_STORAGE_PREFIX = "watchmatch:seen:v1";
 
 function BrandMark({small = false}: {small?: boolean}) {
   return (
@@ -91,7 +67,7 @@ function BrandMark({small = false}: {small?: boolean}) {
 function FlowProgress({scene}: {scene: Scene}) {
   const current = FLOW_STEPS.findIndex((step) => step.scene === scene);
   return (
-    <nav className="flow-progress" aria-label="쇼츠 제작 단계">
+    <nav className="flow-progress" aria-label="추천 및 쇼츠 제작 단계">
       <ol>
         {FLOW_STEPS.map((step, index) => (
           <li
@@ -106,6 +82,33 @@ function FlowProgress({scene}: {scene: Scene}) {
       </ol>
     </nav>
   );
+}
+
+function eraLabel(era: Era): string {
+  return ERAS.find((item) => item.value === era)?.label ?? era;
+}
+
+function storageKey(mediaType: MediaType, genre: AllowedGenre, era: Era): string {
+  return `${SEEN_STORAGE_PREFIX}:${mediaType}:${genre}:${era}`;
+}
+
+function readSeenIds(mediaType: MediaType, genre: AllowedGenre, era: Era): string[] {
+  try {
+    const stored = window.sessionStorage.getItem(storageKey(mediaType, genre, era));
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSeenIds(mediaType: MediaType, genre: AllowedGenre, era: Era, ids: string[]) {
+  try {
+    window.sessionStorage.setItem(storageKey(mediaType, genre, era), JSON.stringify([...new Set(ids)]));
+  } catch {
+    // 추천은 저장 공간이 차단된 환경에서도 정상 동작해야 합니다.
+  }
 }
 
 function RecommendationCard({
@@ -135,13 +138,12 @@ function RecommendationCard({
       <div className="card-meta">
         <span>{recommendation.year}</span>
         <span>{recommendation.mediaType === "movie" ? "영화" : "TV 시리즈"}</span>
-        <span>등급 {recommendation.rating}</span>
+        <span>{eraLabel(recommendation.era)}</span>
         <span className="safe-badge">스포일러 없음</span>
-        <span className="demo-badge">Netflix KR 수동 검증</span>
       </div>
       <h3>{recommendation.title}</h3>
       <div className="genre-row" aria-label="장르">
-        {recommendation.genres.map((genre) => <span key={genre}>#{genre}</span>)}
+        {recommendation.genres.map((item) => <span key={item}>#{item}</span>)}
       </div>
       <div className="card-copy">
         <p className="copy-label">무스포 전제</p>
@@ -154,97 +156,39 @@ function RecommendationCard({
           <p>{recommendation.reason}</p>
         </div>
       </div>
-      <div className="availability-box">
-        <div>
-          <strong><span aria-hidden="true">✓</span> Netflix 대한민국 · 구독 포함</strong>
-          <span>관리자 직접 확인</span>
-        </div>
-        <dl>
-          <div><dt>확인일</dt><dd>{formatCheckedAt(recommendation.availability.checkedAt)}</dd></div>
-          <div><dt>만료일</dt><dd>{formatCheckedAt(recommendation.availability.expiresAt)}</dd></div>
-          <div><dt>관람 등급</dt><dd>{recommendation.rating}</dd></div>
-        </dl>
-        <p>OTT 편성은 바뀔 수 있습니다. 재생 전 Netflix에서 다시 확인해 주세요.</p>
-      </div>
       <div className="source-row">
-        <span>정보 확인 · {formatCheckedAt(recommendation.checkedAt)}</span>
-        <span className="source-links">
-          {recommendation.sources.map((source) => (
-            <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
-              {source.label}<span aria-hidden="true"> ↗</span>
-            </a>
-          ))}
-        </span>
+        <span>작품 정보 출처</span>
+        <a href={recommendation.source.url} target="_blank" rel="noopener noreferrer">
+          {recommendation.source.label}<span aria-hidden="true"> ↗</span>
+        </a>
       </div>
     </article>
   );
 }
 
-export function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
-  return (
-    <details className="discovery-sources" open>
-      <summary>
-        <span>
-          <span className="source-summary-symbol" aria-hidden="true">↗</span>
-          수동 검증 기록 {sources.length}개
-        </span>
-        <small>목록 접기·펼치기</small>
-      </summary>
-      {sources.length > 0 ? (
-        <ol className="discovery-source-list">
-          {sources.map((source, index) => (
-            <li key={`${source.url}-${index}`}>
-              <div className="discovery-source-heading">
-                <span className="source-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <h3>{source.title || source.domain || "검증 기록"}</h3>
-                  <span className="source-domain">{source.domain || "공개 확인 URL"}</span>
-                </div>
-              </div>
-              <p>{source.excerpt || "관리자가 기록한 공개 확인 URL입니다."}</p>
-              <a
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${source.title || source.domain || "검색 출처"} 원문 새 창에서 보기`}
-              >
-                원문 보기 <span aria-hidden="true">↗</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="empty-source-note">현재 조건에 맞는 수동 검증 기록이 없습니다.</p>
-      )}
-    </details>
-  );
-}
-
 export default function WatchMatchHosted() {
-  const [scene, setScene] = useState<Scene>("home");
-  const [mediaType, setMediaType] = useState<MediaType>("movie");
-  const [genres, setGenres] = useState<string[]>(["미스터리"]);
-  const [mood, setMood] = useState("mysterious");
+  const [scene, setScene] = useState<Scene>("media");
+  const [mediaType, setMediaType] = useState<MediaType | null>(null);
+  const [genre, setGenre] = useState<AllowedGenre | null>(null);
+  const [era, setEra] = useState<Era | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [discoverySources, setDiscoverySources] = useState<DiscoverySource[]>([]);
-  const [discoveryStatus, setDiscoveryStatus] = useState<DiscoveryStatus>("complete");
-  const [discoveryMessage, setDiscoveryMessage] = useState("");
-  const [discoverySummary, setDiscoverySummary] = useState<DiscoverySummary>({
-    citationCount: 0,
-    candidateCount: 0,
-    rejectedCount: 0,
-  });
+  const [recommendationMeta, setRecommendationMeta] = useState<RecommendationMeta>({remaining: 0, cycleReset: false});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [productionRun, setProductionRun] = useState(0);
   const searchAbortRef = useRef<AbortController | null>(null);
+  const screenTitleRef = useRef<HTMLHeadingElement | null>(null);
 
   const selected = useMemo(
     () => recommendations.find((item) => item.id === selectedId) ?? null,
     [recommendations, selectedId],
   );
+
+  useEffect(() => {
+    screenTitleRef.current?.focus();
+  }, [scene]);
 
   useEffect(() => {
     if (scene !== "production") return;
@@ -270,87 +214,87 @@ export default function WatchMatchHosted() {
     setSearching(false);
     setSearchError("");
     setRecommendations([]);
-    setDiscoverySources([]);
-    setDiscoveryStatus("complete");
-    setDiscoveryMessage("");
-    setDiscoverySummary({citationCount: 0, candidateCount: 0, rejectedCount: 0});
-    setScene("home");
+    setRecommendationMeta({remaining: 0, cycleReset: false});
+    setScene("media");
+    setMediaType(null);
+    setGenre(null);
+    setEra(null);
     setSelectedId(null);
     setProgress(0);
   };
 
-  const toggleGenre = (genre: string) => {
-    setGenres((current) => {
-      if (current.includes(genre)) {
-        return current.length === 1 ? current : current.filter((item) => item !== genre);
-      }
-      return current.length >= 3 ? current : [...current, genre];
-    });
+  const chooseMediaType = (nextMediaType: MediaType) => {
+    setMediaType(nextMediaType);
+    setGenre(null);
+    setEra(null);
+    setSearchError("");
+    setRecommendations([]);
+    setSelectedId(null);
+    setScene("genre");
   };
 
-  const findRecommendations = async () => {
+  const chooseGenre = (nextGenre: AllowedGenre) => {
+    setGenre(nextGenre);
+    setEra(null);
+    setSearchError("");
+    setRecommendations([]);
+    setSelectedId(null);
+    setScene("era");
+  };
+
+  const findRecommendations = async (requestedEra: Era) => {
+    if (!mediaType || !genre) return;
+
     searchAbortRef.current?.abort();
     const controller = new AbortController();
     searchAbortRef.current = controller;
+    const excludeIds = readSeenIds(mediaType, genre, requestedEra);
+
+    setEra(requestedEra);
+    setScene("recommendations");
     setSearching(true);
     setSearchError("");
     setSelectedId(null);
     setRecommendations([]);
-    setDiscoverySources([]);
-    setDiscoveryStatus("complete");
-    setDiscoveryMessage("");
-    setDiscoverySummary({citationCount: 0, candidateCount: 0, rejectedCount: 0});
+    setRecommendationMeta({remaining: 0, cycleReset: false});
 
     try {
       const response = await fetch("/api/recommendations", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          mediaType,
-          genres,
-          mood,
-          ottProvider: "netflix",
-          region: "KR",
-          accessMode: "subscription",
-        }),
+        body: JSON.stringify({mediaType, genre, era: requestedEra, excludeIds}),
         signal: controller.signal,
       });
       const payload = await response.json() as {
         recommendations?: Recommendation[];
-        sources?: DiscoverySource[];
-        status?: DiscoveryStatus;
-        summary?: DiscoverySummary;
-        message?: string;
-        model?: string;
+        meta?: Partial<RecommendationMeta>;
         error?: {message?: string};
       };
 
       if (!response.ok) {
-        throw new Error(payload.error?.message || "작품을 검색하지 못했습니다.");
+        throw new Error(payload.error?.message || "추천 작품을 불러오지 못했습니다.");
       }
-      if (!Array.isArray(payload.recommendations) || !Array.isArray(payload.sources)) {
-        throw new Error("검색 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.");
+      if (!Array.isArray(payload.recommendations) || payload.recommendations.length !== 3) {
+        throw new Error("추천 카탈로그를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
       }
       if (controller.signal.aborted) return;
-      setRecommendations(payload.recommendations);
-      setDiscoverySources(payload.sources);
-      setDiscoveryStatus(
-        payload.recommendations.length === 0
-          ? payload.sources.length > 0 ? "sources_only" : "empty"
-          : payload.recommendations.length < 3
-            ? "partial"
-            : payload.status ?? "complete",
+
+      const nextMeta: RecommendationMeta = {
+        remaining: typeof payload.meta?.remaining === "number" ? payload.meta.remaining : 0,
+        cycleReset: payload.meta?.cycleReset === true,
+      };
+      const returnedIds = payload.recommendations.map((item) => item.id);
+      writeSeenIds(
+        mediaType,
+        genre,
+        requestedEra,
+        nextMeta.cycleReset ? returnedIds : [...excludeIds, ...returnedIds],
       );
-      setDiscoveryMessage(payload.message ?? "");
-      setDiscoverySummary(payload.summary ?? {
-        citationCount: payload.sources.length,
-        candidateCount: payload.recommendations.length,
-        rejectedCount: 0,
-      });
-      setScene("recommendations");
+      setRecommendations(payload.recommendations);
+      setRecommendationMeta(nextMeta);
     } catch (error) {
       if (controller.signal.aborted) return;
-      setSearchError(error instanceof Error ? error.message : "작품 검색에 실패했습니다.");
+      setSearchError(error instanceof Error ? error.message : "추천 작품을 불러오지 못했습니다.");
     } finally {
       if (searchAbortRef.current === controller) {
         searchAbortRef.current = null;
@@ -367,139 +311,132 @@ export default function WatchMatchHosted() {
   };
 
   const activePipelineIndex = Math.min(7, Math.floor(progress / 12.5));
+  const selectionLabel = mediaType && genre && era
+    ? `${mediaType === "movie" ? "영화" : "TV 시리즈"} · ${genre} · ${eraLabel(era)}`
+    : "";
 
   return (
     <div className="app-shell">
       <header className="site-header">
-        <button className="brand" type="button" aria-label="WatchMatch 메인화면" onClick={reset}>
+        <button className="brand" type="button" aria-label="WatchMatch 처음부터 시작" onClick={reset}>
           <BrandMark />
           <span>WatchMatch</span>
         </button>
-        <span className="hosted-demo-pill"><span aria-hidden="true">●</span> VERIFIED OTT CATALOG</span>
+        <button type="button" className="header-reset-button" onClick={reset}>처음부터</button>
       </header>
 
       <main id="top">
         <FlowProgress scene={scene} />
 
-        {scene === "home" ? (
-          <section className="hero flow-screen home-screen" aria-labelledby="hero-title">
-            <div className="hero-orb hero-orb-one" aria-hidden="true" />
-            <div className="hero-orb hero-orb-two" aria-hidden="true" />
-            <p className="eyebrow hero-eyebrow"><span aria-hidden="true">✦</span> AI 무스포 작품 큐레이터</p>
-            <h1 id="hero-title">볼까 말까,<br /><span>25초면 충분해.</span></h1>
-            <p className="hero-copy">장르와 분위기를 고르고, 최근 14일 안에 직접 확인한 Netflix 대한민국 작품과 쇼츠 제작 흐름을 체험해 보세요.</p>
-            <div className="hero-actions">
-              <button type="button" className="primary-button hero-start-button" onClick={() => setScene("preferences")}>
-                추천 시작하기 <span aria-hidden="true">→</span>
-              </button>
-              <span>추천은 수동 검증 카탈로그를 사용하며, 영상 단계는 검증된 기술 샘플입니다.</span>
-            </div>
-            <div className="mode-notice demo" role="status">
-              <span className="notice-icon" aria-hidden="true">◇</span>
-              <div><strong>VERIFIED OTT CATALOG</strong><p>Netflix 대한민국 구독 제공과 관람 등급을 직접 확인한 작품만 추천해요.</p></div>
-              <span className="notice-status">14일 유효</span>
+        {scene === "media" ? (
+          <section className="selection-screen flow-screen" aria-labelledby="media-title">
+            <div className="selection-panel">
+              <p className="step-kicker">01 · 작품 유형</p>
+              <h1 id="media-title" ref={screenTitleRef} tabIndex={-1}>무엇을 보고 싶나요?</h1>
+              <p className="selection-lead">영화와 TV 시리즈 중 하나만 눌러주세요.</p>
+              <div className="selection-options media-options" role="group" aria-label="작품 유형 선택">
+                <button type="button" onClick={() => chooseMediaType("movie")}>
+                  <span className="option-symbol" aria-hidden="true">▶</span>
+                  <strong>영화</strong>
+                  <small>한 편에 깊게 몰입하기</small>
+                  <span className="option-arrow" aria-hidden="true">→</span>
+                </button>
+                <button type="button" onClick={() => chooseMediaType("tv")}>
+                  <span className="option-symbol" aria-hidden="true">▤</span>
+                  <strong>TV 시리즈</strong>
+                  <small>여러 에피소드로 오래 즐기기</small>
+                  <span className="option-arrow" aria-hidden="true">→</span>
+                </button>
+              </div>
+              <p className="three-click-hint"><span aria-hidden="true">✦</span> 세 번만 선택하면 작품 3개를 바로 추천해 드려요.</p>
             </div>
           </section>
         ) : null}
 
-        {scene === "preferences" ? (
-          <section className="preference-panel flow-screen" aria-labelledby="preference-title">
-            <button type="button" className="screen-back-button" onClick={reset}><span aria-hidden="true">←</span> 메인으로</button>
-            <div className="section-heading">
-              <div><p className="step-kicker">02 · 장르 및 세부 사항 선택</p><h2 id="preference-title">오늘은 어떤 이야기가 당기나요?</h2></div>
-              <p>장르는 최대 3개까지 고를 수 있어요.</p>
+        {scene === "genre" ? (
+          <section className="selection-screen flow-screen" aria-labelledby="genre-title">
+            <div className="selection-panel">
+              <button type="button" className="screen-back-button" onClick={() => setScene("media")}><span aria-hidden="true">←</span> 영화·TV 다시 선택</button>
+              <p className="step-kicker">02 · 장르</p>
+              <h1 id="genre-title" ref={screenTitleRef} tabIndex={-1}>어떤 이야기가 당기나요?</h1>
+              <p className="selection-lead"><strong>{mediaType === "movie" ? "영화" : "TV 시리즈"}</strong>에서 장르 하나를 골라주세요.</p>
+              <div className="selection-options genre-options" role="group" aria-label="장르 선택">
+                {GENRES.map((item, index) => (
+                  <button type="button" key={item} onClick={() => chooseGenre(item)}>
+                    <span className="genre-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{item}</strong>
+                    <span className="option-arrow" aria-hidden="true">→</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <fieldset className="choice-group media-choice">
-              <legend>작품 유형</legend>
-              <div className="segmented-control">
-                <button type="button" className={mediaType === "movie" ? "is-selected" : ""} aria-pressed={mediaType === "movie"} onClick={() => {setMediaType("movie"); setSelectedId(null); setRecommendations([]); setDiscoverySources([]); setSearchError("");}}><span>영화</span><small>한 편에 몰입</small></button>
-                <button type="button" className={mediaType === "tv" ? "is-selected" : ""} aria-pressed={mediaType === "tv"} onClick={() => {setMediaType("tv"); setSelectedId(null); setRecommendations([]); setDiscoverySources([]); setSearchError("");}}><span>TV 시리즈</span><small>길게 정주행</small></button>
+          </section>
+        ) : null}
+
+        {scene === "era" ? (
+          <section className="selection-screen flow-screen" aria-labelledby="era-title">
+            <div className="selection-panel">
+              <button type="button" className="screen-back-button" onClick={() => setScene("genre")}><span aria-hidden="true">←</span> 장르 다시 선택</button>
+              <p className="step-kicker">03 · 시대</p>
+              <h1 id="era-title" ref={screenTitleRef} tabIndex={-1}>어느 시대의 작품이 좋나요?</h1>
+              <p className="selection-lead"><strong>{mediaType === "movie" ? "영화" : "TV 시리즈"} · {genre}</strong>에 시대 감각을 더해볼게요.</p>
+              <div className="selection-options era-options" role="group" aria-label="작품 시대 선택">
+                {ERAS.map((item) => (
+                  <button type="button" key={item.value} onClick={() => void findRecommendations(item.value)}>
+                    <span className="option-symbol" aria-hidden="true">{item.symbol}</span>
+                    <strong>{item.label}</strong>
+                    <span className="era-years">{item.years}</span>
+                    <small>{item.description}</small>
+                    <span className="option-arrow" aria-hidden="true">→</span>
+                  </button>
+                ))}
               </div>
-            </fieldset>
-            <fieldset className="choice-group">
-              <legend>장르 <span>{genres.length}/3 선택</span></legend>
-              <div className="chip-grid">
-                {GENRES.map((genre) => {
-                  const chosen = genres.includes(genre);
-                  const disabled = !chosen && genres.length >= 3;
-                  return <button type="button" key={genre} className={chosen ? "is-selected" : ""} aria-pressed={chosen} disabled={disabled} onClick={() => toggleGenre(genre)}><span aria-hidden="true">{chosen ? "✓" : "+"}</span>{genre}</button>;
-                })}
-              </div>
-            </fieldset>
-            <fieldset className="choice-group">
-              <legend>원하는 분위기</legend>
-              <div className="mood-grid">
-                {MOODS.map((option) => <button type="button" key={option.value} className={mood === option.value ? "is-selected" : ""} aria-pressed={mood === option.value} onClick={() => setMood(option.value)}><span className="mood-symbol" aria-hidden="true">{option.symbol}</span><span>{option.label}</span></button>)}
-              </div>
-            </fieldset>
-            <fieldset className="choice-group ott-choice">
-              <legend>이용 중인 OTT</legend>
-              <button type="button" className="ott-provider-card is-selected" aria-pressed="true">
-                <span className="netflix-wordmark">NETFLIX</span>
-                <span><strong>Netflix 대한민국</strong><small>구독에 포함 · 관리자 직접 확인</small></span>
-                <span className="ott-check" aria-hidden="true">✓</span>
-              </button>
-            </fieldset>
-            <p className="demo-choice-note"><span aria-hidden="true">◇</span> 최근 14일 안에 Netflix 대한민국 제공과 청소년 관람가 등급을 직접 확인한 작품만 보여줍니다.</p>
-            {searchError ? <p className="inline-error" role="alert">{searchError}</p> : null}
-            <button type="button" className="primary-button search-button" onClick={findRecommendations} disabled={searching}>
-              {searching ? <><span className="button-spinner" aria-hidden="true" /> 검증 목록을 확인하는 중</> : <>Netflix 검증 목록에서 찾기 <span aria-hidden="true">→</span></>}
-            </button>
+              <p className="three-click-hint"><span aria-hidden="true">◇</span> 시대를 누르면 별도 검색 버튼 없이 바로 세 작품이 나옵니다.</p>
+            </div>
           </section>
         ) : null}
 
         {scene === "recommendations" ? (
           <section className="recommendations-section flow-screen" aria-labelledby="recommendations-title">
-            <button type="button" className="screen-back-button" onClick={() => setScene("preferences")}><span aria-hidden="true">←</span> 조건 다시 선택</button>
+            <button type="button" className="screen-back-button" onClick={() => setScene("era")}><span aria-hidden="true">←</span> 시대 다시 선택</button>
             <div className="section-heading recommendation-heading">
               <div>
-                <p className="step-kicker">03 · 작품 선택</p>
-                <h2 id="recommendations-title">
-                  {recommendations.length === 3
-                    ? "오늘의 후보는 이 세 작품"
-                    : recommendations.length > 0
-                      ? `검증된 후보 ${recommendations.length}개를 찾았어요`
-                      : "현재 선택할 수 있는 검증 작품이 없어요"}
-                </h2>
+                <p className="step-kicker">04 · 작품 선택</p>
+                <h1 id="recommendations-title" ref={screenTitleRef} tabIndex={-1}>{searching ? "딱 맞는 세 작품을 고르는 중…" : "오늘의 후보는 이 세 작품"}</h1>
+                <p className="selection-summary">{selectionLabel}</p>
               </div>
-              {recommendations.length > 0 ? <span className="no-spoiler-badge"><span aria-hidden="true">✓</span> 전부 무스포</span> : null}
+              {!searching && recommendations.length === 3 ? <span className="no-spoiler-badge"><span aria-hidden="true">✓</span> 전부 무스포</span> : null}
             </div>
 
-            <section className={`discovery-result-notice is-${discoveryStatus}`} aria-live="polite" aria-label="검색 결과 안내">
-              <span className="discovery-result-icon" aria-hidden="true">{discoveryStatus === "complete" ? "✓" : discoveryStatus === "partial" ? "!" : discoveryStatus === "sources_only" ? "i" : "◇"}</span>
-              <div>
-                <strong>
-                  {discoveryStatus === "complete"
-                    ? "작품과 근거 확인을 마쳤습니다."
-                    : discoveryStatus === "partial"
-                      ? "확인된 작품만 먼저 보여드립니다."
-                      : discoveryStatus === "sources_only"
-                        ? "관련 기록은 있지만 제공 확인이 만료됐습니다."
-                        : "아직 이 조건으로 승인된 작품이 없습니다."}
-                </strong>
-                <p>{discoveryMessage || (recommendations.length > 0 ? "아래 작품을 선택하거나 수동 확인 기록을 살펴보세요." : "조건을 바꾸거나 관리자의 새 확인을 기다려 주세요.")}</p>
-              </div>
-              <dl className="discovery-result-stats" aria-label="카탈로그 검증 요약">
-                <div><dt>검증 기록</dt><dd>{discoverySummary.citationCount}</dd></div>
-                <div><dt>유효 후보</dt><dd>{discoverySummary.candidateCount}</dd></div>
-                <div><dt>만료 제외</dt><dd>{discoverySummary.rejectedCount}</dd></div>
-              </dl>
-            </section>
+            <div className="catalog-notice" role="note">
+              <span aria-hidden="true">i</span>
+              <p>일반 작품 카탈로그를 기준으로 추천합니다. <strong>OTT 제공 여부는 각 서비스에서 확인해 주세요.</strong></p>
+            </div>
 
-            {recommendations.length > 0 ? (
-              <div className="recommendation-grid" role="radiogroup" aria-label={`추천 작품 ${recommendations.length}개`}>
-                {recommendations.map((recommendation, index) => <RecommendationCard key={recommendation.id} recommendation={recommendation} index={index} selected={recommendation.id === selectedId} onSelect={() => setSelectedId(recommendation.id)} />)}
+            {searching ? (
+              <div className="recommendation-grid" aria-label="추천 작품을 불러오는 중" aria-live="polite">
+                {[0, 1, 2].map((item) => <div key={item} className="recommendation-card skeleton-card"><span className="skeleton-line skeleton-meta" /><span className="skeleton-line skeleton-title" /><span className="skeleton-line" /><span className="skeleton-line short" /><span className="skeleton-block" /></div>)}
+              </div>
+            ) : searchError ? (
+              <div className="empty-recommendations" role="alert">
+                <span aria-hidden="true">!</span>
+                <div><strong>추천을 불러오지 못했습니다.</strong><p>{searchError}</p></div>
+                {era ? <button type="button" className="secondary-button" onClick={() => void findRecommendations(era)}>다시 시도</button> : null}
               </div>
             ) : (
-              <div className="empty-recommendations" role="status">
-                <span aria-hidden="true">◇</span>
-                <div><strong>지금 선택할 수 있는 작품은 없습니다.</strong><p>확인되지 않은 작품을 억지로 추천하지 않습니다. 조건을 바꾸거나 새 수동 검증을 기다려 주세요.</p></div>
-              </div>
+              <>
+                <div className="recommendation-toolbar" aria-live="polite">
+                  <p>{recommendationMeta.cycleReset ? "후보를 한 바퀴 돌아 새 순환을 시작했어요." : `이 조건에서 아직 보지 않은 작품 ${recommendationMeta.remaining}편`}</p>
+                  <button type="button" className="secondary-button" onClick={() => era && void findRecommendations(era)} disabled={!era || searching}>다른 3편 추천 <span aria-hidden="true">↻</span></button>
+                </div>
+                <div className="recommendation-grid" role="radiogroup" aria-label="추천 작품 3개">
+                  {recommendations.map((recommendation, index) => <RecommendationCard key={recommendation.id} recommendation={recommendation} index={index} selected={recommendation.id === selectedId} onSelect={() => setSelectedId(recommendation.id)} />)}
+                </div>
+              </>
             )}
 
-            <DiscoverySources sources={discoverySources} />
             <div className="create-bar">
-              <div><p>선택한 작품</p><strong>{selected?.title ?? (recommendations.length > 0 ? "작품을 골라주세요" : "선택 가능한 작품 없음")}</strong></div>
+              <div><p>선택한 작품</p><strong>{selected?.title ?? "작품을 하나 골라주세요"}</strong></div>
               <button type="button" className="primary-button" onClick={startProduction} disabled={!selected}>25초 쇼츠 체험 <span aria-hidden="true">▶</span></button>
             </div>
           </section>
@@ -508,7 +445,7 @@ export default function WatchMatchHosted() {
         {scene === "production" ? (
           <section className="project-section flow-screen production-screen" aria-labelledby="production-title">
             <section className="pipeline-panel">
-              <div className="pipeline-heading"><div><p className="eyebrow">04 · 영상 제작 중</p><h2 id="production-title">{selected?.title}</h2></div><span className="render-id">VIDEO DEMO</span></div>
+              <div className="pipeline-heading"><div><p className="eyebrow">05 · 영상 제작 중</p><h1 id="production-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title}</h1></div><span className="render-id">VIDEO DEMO</span></div>
               <div className="active-job"><div className="job-orbit" aria-hidden="true"><span /></div><div><p aria-live="polite">{PIPELINE_STEPS[activePipelineIndex]}</p><span>공개 체험판용 준비 과정을 보여드리고 있어요.</span></div><strong>{progress}%</strong></div>
               <div className="progress-track" role="progressbar" aria-label="쇼츠 준비 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{width: `${progress}%`}} /></div>
               <ol className="pipeline-steps">
@@ -523,14 +460,14 @@ export default function WatchMatchHosted() {
           <section className="project-section flow-screen result-screen" aria-labelledby="result-title">
             <section className="result-panel">
               <div className="result-copy">
-                <p className="step-kicker">05 · 영상 보기</p>
-                <h2 id="result-title">25초의 호기심이 완성됐어요.</h2>
+                <p className="step-kicker">06 · 영상 보기</p>
+                <h1 id="result-title" ref={screenTitleRef} tabIndex={-1}>25초의 호기심이 완성됐어요.</h1>
                 <p>선택 흐름을 확인하는 공개 체험판입니다. 아래 영상은 로컬 Wan·Heami·Remotion 파이프라인으로 만든 검증된 Sintel 기술 샘플입니다.</p>
                 <div className="result-facts"><div><span>선택 작품</span><strong>{selected?.title}</strong></div><div><span>샘플 형식</span><strong>9:16 · 25초</strong></div><div><span>샘플 검증</span><strong>H.264 · AAC</strong></div></div>
                 <div className="result-actions">
                   <a className="primary-button download-button" href="/demo/watchmatch-demo.mp4" download>샘플 MP4 다운로드 <span aria-hidden="true">↓</span></a>
                   <button type="button" className="secondary-button" onClick={startProduction}>다시 체험하기</button>
-                  <button type="button" className="text-button" onClick={() => {setScene("preferences"); setSelectedId(null);}}>새 작품 찾기</button>
+                  <button type="button" className="text-button" onClick={reset}>처음부터 추천받기</button>
                 </div>
               </div>
               <div className="phone-frame">
@@ -540,19 +477,11 @@ export default function WatchMatchHosted() {
             </section>
           </section>
         ) : null}
-
-        {scene === "home" ? (
-          <section className="trust-strip" aria-label="WatchMatch 제작 원칙">
-            <div><span aria-hidden="true">01</span><p><strong>수동 OTT 확인</strong>Netflix 대한민국에서 직접 확인한 작품만 사용해요.</p></div>
-            <div><span aria-hidden="true">02</span><p><strong>결말은 비밀</strong>반전과 결말을 보여주지 않아요.</p></div>
-            <div><span aria-hidden="true">03</span><p><strong>원작 자산 미사용</strong>포스터·예고편·배우 음성을 쓰지 않아요.</p></div>
-          </section>
-        ) : null}
       </main>
 
       <footer className="site-footer">
         <div className="footer-brand"><BrandMark small /><strong>WatchMatch</strong></div>
-        <p>작품은 Netflix 대한민국 수동 검증 카탈로그에서 고르고, OpenRouter는 허용된 ID의 순서만 정합니다. 영상 단계는 기술 샘플이며 실제 생성은 로컬 앱에서 처리됩니다.</p>
+        <p>작품은 출처가 기록된 일반 카탈로그에서 추천합니다. 포스터·예고편은 사용하지 않으며 OTT 제공 여부는 각 서비스에서 확인해 주세요.</p>
         <span>© 2026 WatchMatch Prototype</span>
       </footer>
     </div>

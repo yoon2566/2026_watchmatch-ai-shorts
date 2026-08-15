@@ -1,16 +1,20 @@
 # WatchMatch conversation context
 
-## Latest approved direction: manually verified Netflix KR catalog
+## Latest approved direction: three-click general catalog
 
-The user rejected treating general web discovery as an OTT catalog. The approved
-MVP supports Netflix 대한민국 only and requires a human to confirm subscription
-availability and a non-adult rating. Verification is valid for 14 days. Pending
-candidates must stay separate from the public catalog. User recommendation calls
-must not use web search or web fetch; OpenRouter may only rank IDs already allowed
-by the server, with deterministic fallback. TMDB, JustWatch, and automated OTT
-page scraping are out of scope. Preserve the five-screen flow, push each verified
-change to GitHub, keep `http://localhost:3100` available, and do not deploy Sites
-without a separate explicit request.
+The user wants a recommendation app that is immediately understandable to an
+ordinary viewer. The approved selection flow is only three clicks: movie or TV,
+one genre, and an era. Choosing the era must automatically show exactly three
+works from a bundled general catalog. A reroll in the same browser session should
+prefer three works the user has not yet seen for that combination.
+
+Netflix and all other OTT selection, mood selection, runtime OpenRouter ranking,
+web search, and web fetch are removed from the recommendation path. The catalog
+does not claim streaming availability. Development may use Wikidata to verify
+basic identity fields, but the running app must work offline. Preserve explicit
+work selection and the existing video demonstration. Push only after verification,
+keep `http://localhost:3100` available, and do not deploy Sites without a separate
+explicit request.
 
 Last synchronized: 2026-08-15
 
@@ -27,9 +31,8 @@ Excluded on purpose:
 
 ## Product in one sentence
 
-WatchMatch helps a user choose a manually verified Netflix 대한민국 movie or TV
-series and receive a spoiler-free 25-second vertical recommendation short, with
-human availability records and clearly identified AI-generated visuals.
+WatchMatch helps a user choose a movie or TV work with three simple clicks and
+then experience a spoiler-free 25-second vertical recommendation-short flow.
 
 ## How the request evolved
 
@@ -148,6 +151,26 @@ The current collaboration model is now:
 5. Verified changes are committed and pushed immediately.
 6. Sites deployment remains a separate, explicit decision.
 
+### 10. Three-click offline-catalog simplification
+
+The user found the availability-verification workflow too difficult for the
+intended audience. The newest approved experience removes the intro and begins
+with three sequential choices:
+
+1. movie or TV;
+2. one genre;
+3. classic, modern, or recent.
+
+The era boundaries are 1999 or earlier, 2000 through 2019, and 2020 or later.
+The third click immediately produces exactly three works. Recommendations come
+from a bundled general catalog with at least six eligible works in every one of
+the 60 filter combinations, allowing one entirely new reroll before a cycle
+reset. Viewed IDs are remembered only in `sessionStorage`.
+
+This supersedes both live web discovery and the manually verified Netflix KR
+catalog as the active recommendation design. It does not change the existing
+hosted technical video sample or authorize a Sites deployment.
+
 ## Stable user preferences
 
 - Deliver working, verified outcomes rather than plausible plans.
@@ -155,17 +178,17 @@ The current collaboration model is now:
 - Do not show fixed examples as if they were live recommendations.
 - Do not hide successful search sources just because recommendation verification is incomplete.
 - Preserve originals, existing outputs, and unrelated files.
-- Keep the five-screen flow and explicit user selection.
+- Keep the three-click selection flow and explicit work-card selection.
 - Use spoiler-free teaser pacing and stop before a major reveal.
-- Do not weaken adult-content safeguards merely to force three results.
+- Do not claim that a recommended work is available on a particular OTT service.
 - After relevant checks pass, commit and push the change to GitHub.
 
-## Current product question
+## Current implementation checkpoint
 
-The next important design decision is how to represent content ratings by jurisdiction. A useful recommendation may have a safe Korean rating while the same citation page lists a stricter foreign classification. The preferred direction is a three-state result:
-
-- eligible;
-- excluded adult content;
-- rating not yet verified.
-
-See `CHATGPT_PRO_HANDOFF.md` before proposing implementation.
+The active branch is `agent/simple-three-step-recommendations`. The catalog,
+recommendation contract, client flow, and regression tests are complete. The
+catalog has 90 works and all 60 combinations have six or more works. Lint,
+TypeScript, the Vinext build, 11/11 tests, Wikidata verification, and local
+home/API smoke checks passed. The verified branch is pushed; Sites remains at
+its earlier deployment until a separate request. See `CHATGPT_PRO_HANDOFF.md`
+before proposing follow-up work.

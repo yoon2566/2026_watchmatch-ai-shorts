@@ -12,7 +12,7 @@
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "catalog:discover": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/discover-netflix-candidates.ps1",
+    "catalog:verify": "node scripts/verify-wikidata-catalog.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

@@ -24,70 +24,59 @@ The local full project and original media folders are not synchronized by this r
 | URL-only citation preservation | Split displayable URL citations from content-bearing validation evidence. Added public-URL filtering, neutral excerpt fallback, and source-list component rendering. | Lint, TypeScript, Vinext build, and 18/18 tests passed. Six URL-only citations now return `200 + sources_only` without an unnecessary repair call; requests with no public display URL return 502. |
 | Live thriller check | Sent one paid local request for `movie + 스릴러 + thrilling`. | HTTP 200 in 10.56s; ten KMDb citations; zero verified cards because rating citations did not identify the selected works strongly enough; UI now shows all sources. |
 | GitHub baseline | Connected the local repository to `yoon2566/2026_watchmatch-ai-shorts`. | Private repository, `main` pushed at commit `eb3f006350f79375403a1a511a3eff76aefe6097`, local and remote SHA matched. |
+| Manual Netflix catalog | Replaced live search with a human-verified Netflix KR catalog and 14-day availability records. | Phase one was verified, but the zero-approved-entry experience was too burdensome and is now superseded. |
+| Three-click general catalog | Replaced OTT verification with movie/TV, one genre, and era choices backed by a 90-work offline catalog. | All 60 combinations contain at least six works; 11/11 tests, lint, TypeScript, Vinext build, Wikidata verification, and local home/API smoke checks passed on `agent/simple-three-step-recommendations`. |
 
-## Current hosted architecture
+## Target architecture under active implementation
 
 ```text
 Browser
   └─ app/WatchMatchHosted.tsx
        └─ POST /api/recommendations
-            └─ lib/catalog-recommendations.ts
-                 ├─ lib/netflix-catalog.ts
-                 │    └─ data/ott-catalog/netflix-kr.json
-                 └─ lib/catalog-ranker.ts
-                      └─ OpenRouter Chat Completions (ID-only, no tools)
+            └─ bundled general-work catalog
+                 ├─ media type + one genre + era filter
+                 ├─ stable priority and ID ordering
+                 └─ exactly three results, with excluded-ID cycling
 ```
 
 ### Important files
 
 | File | Responsibility |
 |---|---|
-| `app/WatchMatchHosted.tsx` | Five-screen client flow, partial/source-only results, work selection, demo production, and video result. |
+| `app/WatchMatchHosted.tsx` | Three-click client selection, session rerolls, explicit work selection, demo production, and video result. |
 | `app/globals.css` | Responsive black-and-purple WatchMatch design. |
 | `app/api/recommendations/route.ts` | Public recommendation endpoint and error mapping. |
-| `lib/recommendation-contracts.ts` | Request and result types and allowed filters. |
-| `lib/netflix-catalog.ts` | Strict catalog schema, 14-day availability, filtering, scoring, public cards, and result states. |
-| `lib/catalog-ranker.ts` | Optional allowed-ID ranking without web tools and deterministic failure fallback. |
-| `data/ott-catalog/netflix-kr.json` | Server-only approved catalog; currently empty pending human confirmation. |
-| `data/ott-catalog/netflix-kr.review.json` | Non-public pending candidates; never loaded by recommendation runtime. |
-| `tests/rendered-html.test.mjs` | SSR, request scope, catalog validity, expiry, filtering, status, no-tool ranking, fallback, and five-stage regressions. |
-| `scripts/start-local.ps1` | Maps Windows user variable `3_openrouter` into the dev process as `OPENROUTER_API_KEY` without writing the value to disk. |
+| Recommendation contracts and catalog modules | Validate movie/TV, one genre, era, excluded IDs, catalog integrity, stable ordering, and cycle metadata. |
+| Bundled catalog data | Stores basic work identity, genres, spoiler-free premise, tags, priority, and Wikidata provenance without runtime network access. |
+| `tests/rendered-html.test.mjs` | SSR, three-click flow, all 60 catalog combinations, reroll, offline boundaries, explicit selection, and video-stage regressions. |
 | `public/demo/watchmatch-demo.mp4` | Verified 25-second technical sample used by the hosted prototype. |
 
-## Current API behavior
+## Target API behavior
 
 Request:
 
 ```json
 {
   "mediaType": "movie",
-  "genres": ["스릴러"],
-  "mood": "thrilling",
-  "ottProvider": "netflix",
-  "region": "KR",
-  "accessMode": "subscription"
+  "genre": "스릴러",
+  "era": "recent",
+  "excludeIds": ["example-id-1", "example-id-2", "example-id-3"]
 }
 ```
 
-Successful responses return:
+Successful responses return exactly three distinct recommendations plus
+`meta.remaining` and `meta.cycleReset`. If a valid filter combination has fewer
+than six catalog entries, the server reports a catalog-integrity error rather
+than inventing a result. `sessionStorage` holds viewed IDs by combination; it is
+not durable user data.
 
-- `recommendations`: zero to three manually verified, unexpired cards;
-- `sources`: matching manual availability records;
-- `status`: `complete`, `partial`, `sources_only`, or `empty`;
-- `summary`: citation, candidate, and rejection counts;
-- `message` and the model identifier.
-
-OpenRouter receives only IDs and verified tags for at most twelve eligible
-candidates. It cannot add titles, URLs, premises, or facts. Missing keys, HTTP
-errors, timeouts, invalid JSON, and out-of-catalog IDs all fall back to the same
-deterministically scored ordering.
+The runtime recommendation path performs no external fetch and does not require
+OpenRouter or another secret.
 
 ## Credentials and boundaries
 
-- The repository must never contain the OpenRouter key.
-- Local development reads Windows user environment variable `3_openrouter` and aliases it only inside the server process.
-- Sites uses `OPENROUTER_API_KEY` as a secret environment binding.
-- Browser code never receives the key.
+- The repository must never contain the OpenRouter key, even though the new recommendation path does not use it.
+- Browser code receives catalog results, not credentials or authenticated OTT data.
 - `.env*`, `.wrangler`, `.vinext`, `dist`, build outputs, logs, and local work directories are ignored.
 - The current repository is private, but privacy does not justify committing secrets.
 
@@ -104,12 +93,11 @@ npm.cmd test
 ## Known limitations
 
 1. The hosted production step is a technical demonstration, not a live Wan generation job.
-2. The approved Netflix catalog is intentionally empty until the user completes
-   the first manual availability and rating checks.
-3. Availability records expire after 14 days and require another human check.
-4. An existing Sites deployment can lag behind the GitHub branch; pushing does not deploy.
-5. OpenRouter ranking can change ordering, but it cannot change the approved set;
-   deterministic scoring remains the fallback.
+2. Recommendations do not confirm availability on Netflix, Watcha, or another OTT service.
+3. Posters, trailers, full plots, and live popularity data are not included.
+4. Session reroll history resets when the browser session ends.
+5. An existing Sites deployment can lag behind GitHub; pushing does not deploy.
+6. The active branch is pushed, but the existing Sites deployment remains unchanged until separately requested.
 
 ## Git workflow
 

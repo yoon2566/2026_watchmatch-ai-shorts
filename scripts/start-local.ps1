@@ -5,32 +5,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$localKey = [Environment]::GetEnvironmentVariable('3_openrouter', 'User')
 
-if ([string]::IsNullOrWhiteSpace($localKey)) {
-    throw "Windows 사용자 환경변수 '3_openrouter'가 비어 있습니다."
-}
-
-$previousKey = $env:OPENROUTER_API_KEY
-$env:OPENROUTER_API_KEY = $localKey
-
+Push-Location -LiteralPath $projectRoot
 try {
-    Push-Location -LiteralPath $projectRoot
-    try {
-        & npm.cmd run dev -- --port $Port
-        if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-        }
-    }
-    finally {
-        Pop-Location
+    & npm.cmd run dev -- --port $Port
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
     }
 }
 finally {
-    if ($null -eq $previousKey) {
-        Remove-Item -LiteralPath 'Env:\OPENROUTER_API_KEY' -ErrorAction SilentlyContinue
-    }
-    else {
-        $env:OPENROUTER_API_KEY = $previousKey
-    }
+    Pop-Location
 }

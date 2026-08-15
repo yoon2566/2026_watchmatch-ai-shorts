@@ -1,15 +1,20 @@
 # ChatGPT Pro handoff guide
 
-## Current priority update: Netflix manual verification MVP
+## Current priority: three-click offline recommendations
 
-The active branch is `agent/netflix-curated-catalog`. The recommendation path is
-being changed from live web discovery to a human-verified Netflix 대한민국 catalog.
-Read `PROJECT_STATUS.md` and `docs/NETFLIX_REVIEW_FORM.md` before proposing the
-next change. The approved catalog is intentionally empty until the user confirms
-availability and rating; the 16 pending candidates are suggestions, not claims.
-Do not propose TMDB, JustWatch scraping, OTT web fetch, or exposing pending works
-as recommendations. Preserve the five screens and do not deploy without a new
-explicit user request.
+The active branch is `agent/simple-three-step-recommendations`. WatchMatch is
+being simplified from Netflix/manual verification to a general offline catalog.
+The app must start at movie/TV, then ask for one genre, then classic/modern/recent.
+The third click immediately returns exactly three works.
+
+The running recommendation feature must not use an OTT service, Netflix data,
+OpenRouter, web search, web fetch, TMDB, JustWatch, or Wikidata. Basic work
+identity may be checked against Wikidata during development and stored in the
+bundled catalog. Recommendations make no streaming-availability claim.
+
+Implementation, local validation, commit, and branch push are complete. Sites
+deployment was intentionally not performed and still requires a separate
+explicit request.
 
 ## Read these files first
 
@@ -26,83 +31,83 @@ The original conversation is intentionally not required after these files are re
 
 ### ChatGPT Pro
 
-- read repository state and the current PR;
-- identify the next smallest useful product change;
-- explain assumptions and trade-offs;
+- read repository state and the current branch or PR;
+- distinguish the approved design from earlier live-search and Netflix phases;
+- propose only the next smallest useful change;
 - define acceptance criteria and verification;
 - wait for user approval before expanding scope.
 
 ### Local Codex
 
-- inspect the live Windows workspace;
-- implement approved changes;
-- run lint, TypeScript, build, tests, and proportionate live checks;
-- commit and push the verified change;
-- keep the verified local preview reachable at `http://localhost:3100` and give
-  that address to the user after each change;
-- update `PROJECT_STATUS.md` and `docs/ENGINEERING_LOG.md` when the state changes materially.
+- inspect and modify the live Windows workspace;
+- verify catalog integrity across all 60 combinations;
+- run lint, TypeScript, build, tests, and proportionate local checks;
+- commit and push only the verified change;
+- keep the verified local preview reachable at `http://localhost:3100`;
+- update project status and engineering records when state changes materially.
 
 ### User
 
 - choose product direction and acceptable trade-offs;
-- approve external deployment and meaningful changes to safety policy;
-- provide credentials only through local or hosting secret settings, never through Git or chat.
+- approve external deployment or a future OTT-specific feature;
+- provide credentials only through secret settings, never through Git or chat.
 
 ## Starter prompt for a new ChatGPT Pro chat
 
-Copy the following prompt and attach or connect this GitHub repository:
-
 ```text
 Read AGENTS.md, PROJECT_STATUS.md, docs/CHAT_CONTEXT.md, docs/ENGINEERING_LOG.md,
-and the current open Draft PR in yoon2566/2026_watchmatch-ai-shorts.
+docs/WORKLOG.md, and the current branch diff in
+yoon2566/2026_watchmatch-ai-shorts.
 
-Act as the product and engineering director for WatchMatch. Do not modify code yet.
+Act as the product and engineering director for WatchMatch. Do not modify code.
 First report:
-1. the current verified state,
-2. the most important unresolved problem,
-3. one smallest recommended change,
+1. the currently verified state,
+2. which parts of the three-click implementation remain incomplete,
+3. one smallest recommended next change,
 4. exact acceptance criteria,
-5. files likely to change,
-6. tests and live checks required,
-7. risks or policy decisions that require my approval.
+5. tests and local checks required,
+6. any decision that requires my approval.
 
-Preserve the five-screen flow, explicit work selection, spoiler-free behavior,
-adult-content safeguards, one paid web search per recommendation attempt, and
-source transparency. Do not request or expose API keys. Do not deploy unless I
-explicitly approve deployment.
+Preserve this interaction: movie/TV -> one genre -> classic/modern/recent ->
+exactly three recommendations -> explicit work selection -> existing production
+demo -> existing video sample. The first reroll for the same combination must
+return three unseen works within the browser session. Recommendation runtime
+must be offline and API-key-free. Do not claim OTT availability, request API
+keys, or deploy Sites unless I explicitly approve deployment.
 ```
 
-## Recommended next task
+## Verified implementation checkpoint
 
-The strongest next task is to redesign rating evidence into three states:
+The completed redesign satisfies all of the following:
 
-1. `eligible`
-2. `excluded_adult`
-3. `unverified`
+- the app opens at movie/TV and advances after each choice;
+- a single genre is accepted;
+- era boundaries are 1999/2000 and 2019/2020;
+- every one of 60 combinations contains at least six eligible works;
+- every valid request returns exactly three distinct works;
+- the first reroll has no overlap and exhausted cycles reset explicitly;
+- session history is combination-specific and browser-session-only;
+- no recommendation request performs an external fetch or uses OpenRouter;
+- work cards are not automatically selected;
+- the existing production and video-sample stages still work;
+- lint, TypeScript, tests, Vinext build, and local home/API smoke checks pass;
+- the verified commit is pushed on `agent/simple-three-step-recommendations`.
 
-Minimum policy direction:
-
-- Korean classifications take precedence when present.
-- Korean `전체`, `12`, and `15` can be eligible.
-- Korean youth-restricted classifications are excluded.
-- A US `R` rating alone is not automatically equivalent to Korean adult-only content; it should be unverified unless jurisdiction-aware evidence resolves it.
-- A foreign adult classification elsewhere on a multi-country page must not automatically invalidate a clearly bound safe Korean classification.
-- Unknown, mixed, or borrowed ratings remain unverified rather than eligible.
-- `sources_only` must remain a valid honest result if no card is verified.
-
-ChatGPT Pro should propose the schema, migration path, test matrix, and UI labels before Codex edits the implementation.
+Evidence: 90 catalog works, 90 unique QIDs, all 60 buckets at six or more
+works, 11/11 contract tests, a successful Wikidata QID/year/type check, HTTP 200
+for the local home, and two disjoint three-work API responses for the same
+filter combination.
 
 ## Definition of done for future changes
 
 - The requested behavior works locally.
-- Existing five-screen navigation remains intact.
-- No fixed or invented recommendation is presented as live discovery.
+- The three-click selection and explicit work selection remain intact.
+- No invented work or OTT-availability claim appears.
 - No secret appears in tracked files, logs, API responses, or browser bundles.
 - Relevant tests pass.
-- Any bounded live API check and its cost are disclosed.
-- The current branch is pushed and `http://localhost:3100` returns a successful response.
-- `PROJECT_STATUS.md` and this engineering log reflect the new state.
-- The verified commit is pushed and a Draft PR is available for review.
+- The current branch is pushed and `http://localhost:3100` returns successfully.
+- Project status and engineering logs reflect the verified state.
+- Sites deployment occurs only after a separate explicit request.
 
 ## Instructions that must not be inferred
 
@@ -110,7 +115,8 @@ GitHub access does not authorize any of the following without an explicit user r
 
 - Sites deployment;
 - changing hosting secrets;
-- weakening adult-content rules;
+- adding runtime web search or another paid API;
+- claiming OTT availability;
 - publishing the repository;
 - deleting original media or local generation artifacts;
 - starting a large paid generation or search batch.
@@ -124,4 +130,5 @@ GitHub access does not authorize any of the following without an explicit user r
 - Sites secrets;
 - the user's GPU, ComfyUI state, or local generated artifacts.
 
-When any of those are required, ChatGPT Pro should write a precise, bounded instruction for local Codex rather than assume the resource is available.
+When any of those are required, ChatGPT Pro should write a precise, bounded
+instruction for local Codex rather than assume the resource is available.

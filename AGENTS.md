@@ -10,14 +10,15 @@
 ## Secrets and generated data
 
 - Never commit API keys, bearer tokens, `.env.local`, local user-environment values, logs, build caches, or OpenRouter response payloads containing private data.
-- Keep `OPENROUTER_API_KEY` in the local Windows user environment or the hosting provider's secret storage only.
+- The recommendation runtime does not require an API key. If a future tool reintroduces credentials, keep them only in local or hosting secret storage.
 - Do not add newly generated final videos to Git history by default. Use release assets or external artifact storage when a video deliverable must be shared.
 
 ## Product invariants
 
-- Preserve the explicit five-screen flow: main, preferences, recommendation selection, video production, and video result.
-- Preserve spoiler-free copy, adult-content exclusion, source transparency, and one paid web-search request per recommendation attempt.
-- A recommendation may return zero to three verified works, but every safe OpenRouter search citation must remain visible to the user.
+- Preserve the explicit interaction flow: movie/TV, one genre, one era, recommendation selection, video production, and video result.
+- Preserve spoiler-free copy, source transparency, and the rule that no work is selected automatically.
+- Every supported media/genre/era combination must return exactly three distinct offline-catalog works and support one fully different reroll.
+- Recommendation requests must not use OpenRouter, web search, web fetch, TMDB, JustWatch, or OTT availability claims.
 - Keep deployment separate from implementation. Local verification and GitHub push do not authorize a Sites deployment.
 
 ## Verification

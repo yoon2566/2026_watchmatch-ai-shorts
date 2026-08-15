@@ -149,6 +149,36 @@ Git state, deployment state, and remaining limits.
   result was not valid candidate JSON. The script parser was hardened without
   another paid retry, and the existing 16 pending suggestions were preserved.
 
+## 2026-08-15 - Three-click general-catalog redesign
+
+- User request: make WatchMatch easy to use by reducing recommendation input to
+  movie or TV, one genre, and classic/modern/recent.
+- Product reason: the manual Netflix availability workflow made a normal search
+  appear broken while the approved catalog was empty and required too much user
+  effort for the intended experience.
+- Decision:
+  - open directly at the movie/TV choice;
+  - advance automatically after each of the three choices;
+  - return exactly three works from a bundled general catalog;
+  - define classic as 1999 or earlier, modern as 2000–2019, and recent as 2020 or later;
+  - keep at least six works in every one of 60 filter combinations;
+  - use `sessionStorage` excluded IDs so the first reroll is entirely different;
+  - remove OTT/Netflix, mood, runtime OpenRouter, web search, and web fetch from recommendations;
+  - preserve explicit work selection and the existing hosted video demonstration.
+- Status: verified and pushed on `agent/simple-three-step-recommendations`.
+- Changed: added a 90-work offline catalog, strict schema and 60-bucket coverage
+  validation, stable three-result API, session-scoped rerolls, and the automatic
+  movie/TV → genre → era interface. Removed the retired Netflix catalog,
+  runtime OpenRouter recommendation path, mood selector, and live-search UI.
+- Verification: ESLint and TypeScript passed; the Vinext build and 11/11 tests
+  passed; all 60 combinations have at least six works; Wikidata confirmed all
+  90 unique QIDs, years, and movie/TV types; local home/API returned HTTP 200;
+  the first repeated thriller/recent request had zero overlapping IDs.
+- Branch / commit / PR: verified branch pushed; see the current branch head and
+  GitHub Draft PR for the immutable commit identifier.
+- Deployment: not requested and not performed.
+- Known limit: recommendations do not assert that a work is available on any OTT service.
+
 ## Entry template
 
 Copy this section for future material changes:

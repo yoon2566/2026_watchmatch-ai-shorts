@@ -5,90 +5,90 @@ Last updated: 2026-08-15
 ## Repository and delivery
 
 - GitHub: `https://github.com/yoon2566/2026_watchmatch-ai-shorts`
-- Working branch: `agent/netflix-curated-catalog`
+- Working branch: `agent/simple-three-step-recommendations`
 - Local project: `C:\Users\User\Desktop\채민\shorts-webapp-sites`
-- Local URL: `http://localhost:3100`
+- Local URL after implementation verification: `http://localhost:3100`
 - Sites deployment is intentionally unchanged until a separate request.
 
-## Current product decision
+## Active product decision
 
-WatchMatch no longer treats OpenRouter web search as an OTT database. The MVP
-supports only Netflix 대한민국 subscription titles that a human administrator
-checked within the previous 14 days. TMDB, JustWatch, OTT-page scraping, and
-automated web fetch are not used.
+WatchMatch is being simplified into a three-click, general movie and TV
+recommendation experience. The app opens directly at the first choice and asks
+only for media type, one genre, and an era. Selecting the era immediately returns
+exactly three works from a bundled, development-time-verified catalog.
 
-## Five-screen flow
+This replaces the Netflix-only manual catalog and earlier live-discovery designs.
+The recommendation path will not depend on an OTT service, OpenRouter, runtime web
+search, TMDB, JustWatch, or another external catalog. OTT availability is not
+claimed and must be checked separately by the user.
 
-1. Main
-2. Media type, genre, mood, and Netflix KR scope
-3. Select one manually verified work
-4. Video production demonstration
-5. Watch the verified 25-second technical sample
+## Target interaction flow
 
-## Recommendation architecture
+1. Choose `영화` or `TV`.
+2. Choose one of ten genres.
+3. Choose an era:
+   - `고전`: 1999 or earlier
+   - `근래`: 2000 through 2019
+   - `최근`: 2020 or later
+4. View exactly three recommendations and explicitly select one work.
+5. Run the existing hosted production demonstration.
+6. Watch or download the existing verified 25-second technical sample.
+
+Each choice advances immediately. The result screen also provides back and
+restart controls. A recommendation is never selected automatically, and the
+production button remains disabled until the user selects a card.
+
+## Target recommendation architecture
 
 ```text
-Browser preferences
+Browser choice: media type -> one genre -> era
   -> POST /api/recommendations
-  -> validate Netflix / KR / subscription request
-  -> load server-only verified catalog
-  -> remove expired and unsafe entries
-  -> deterministic score, maximum 12 candidates
-  -> optional OpenRouter ID-only ranking, no tools
-  -> validate IDs and build reasons from verified tags
-  -> deterministic fallback on every model or credential failure
+  -> validate the three filters and optional excluded IDs
+  -> filter the bundled general-work catalog
+  -> stable priority-and-ID ordering
+  -> return exactly three offline recommendations
+  -> remember viewed IDs per combination in sessionStorage
 ```
 
-- `complete`: three valid cards
-- `partial`: one or two valid cards
-- `sources_only`: related manual records exist but are expired
-- `empty`: no related approved record exists
-- All four states return HTTP 200.
+- The first reroll for the same combination returns three different works.
+- When fewer than three unseen candidates remain, the server resets that
+  combination's cycle and reports the reset in response metadata.
+- Every one of the 60 media-type, genre, and era combinations must have at least
+  six eligible catalog entries.
+- Catalog titles, years, and work types are checked against Wikidata during
+  development only. The running application makes no Wikidata request.
+- Posters, trailers, full plots, and OTT availability are outside the catalog.
 
-## Catalog state
+## Current implementation state
 
-- Approved public catalog: `data/ott-catalog/netflix-kr.json`
-- Approved entries: 0, intentionally, until the user performs Netflix KR checks
-- Pending review file: `data/ott-catalog/netflix-kr.review.json`
-- Pending candidates: 16 (8 movie, 8 TV)
-- Review form: `docs/NETFLIX_REVIEW_FORM.md`
-
-Pending entries are never imported by the runtime and cannot appear as cards.
-The next commit will move only user-confirmed, non-adult entries into the approved
-catalog with exact checked and expiry timestamps plus public evidence URLs.
+- The three-click implementation is complete on
+  `agent/simple-three-step-recommendations` and is pushed with this status record.
+- The bundled catalog contains 90 works: 45 movies and 45 TV series. All 60
+  media-type, genre, and era combinations contain at least six works.
+- Wikidata development verification passed for all 90 unique QIDs, release
+  years, and movie/TV types. The runtime remains fully offline.
+- The existing hosted production and result screens continue to use the verified
+  technical sample; this Sites project does not run Wan generation.
 
 ## Security and boundaries
 
-- The OpenRouter key stays in Windows user variable `3_openrouter` locally and
-  the `OPENROUTER_API_KEY` secret binding on Sites.
-- The browser, Git, catalog, logs, and API responses never receive the key.
-- User recommendation calls contain neither `web_search` nor `web_fetch`.
-- No Netflix credentials or authenticated URLs are stored.
-- Hosted video remains a technical sample; real Wan generation stays in the
-  separate Windows-local app.
+- Recommendation requests do not require or receive an API key.
+- Runtime recommendation code must not call OpenRouter, `web_search`,
+  `web_fetch`, TMDB, JustWatch, Wikidata, or an OTT page.
+- No OTT credentials, authenticated URLs, or availability assertions are stored.
+- Real Wan generation remains in the separate Windows-local project.
+- No Sites deployment is authorized by this implementation request.
 
-## Verification commands
+## Verified checks
 
 ```powershell
 npm.cmd run lint
 npx.cmd tsc --noEmit
 npm.cmd test
+npm.cmd run catalog:verify
 ```
 
-Latest phase-one verification:
-
-- ESLint: pass
-- TypeScript: pass
-- Vinext production build: pass
-- Catalog/API/UI contract tests: 14/14 pass
-- Local home: HTTP 200 and `VERIFIED OTT CATALOG` present
-- Local API: HTTP 200, `empty`, zero unverified cards, deterministic mode
-- Candidate discovery command: bounded to one movie and one TV web search; the
-  first live response was not valid candidate JSON, so the original 16 pending
-  suggestions were preserved and no availability claim was promoted.
-
-## Next user action
-
-Use `docs/NETFLIX_REVIEW_FORM.md` to confirm any pending candidates in Netflix
-대한민국. The second implementation commit will validate and publish only those
-confirmed records. Do not claim that a pending candidate is currently available.
+All checks pass. `npm.cmd test` completed the Vinext production build and 11/11
+contract tests. The local home returned HTTP 200, and two consecutive
+`movie + 스릴러 + 최근` API requests returned three works each with zero ID
+overlap. The verified branch is available on GitHub; Sites was not redeployed.
