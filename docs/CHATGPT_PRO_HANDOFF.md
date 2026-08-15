@@ -132,3 +132,24 @@ GitHub access does not authorize any of the following without an explicit user r
 
 When any of those are required, ChatGPT Pro should write a precise, bounded
 instruction for local Codex rather than assume the resource is available.
+
+## Latest local media checkpoint
+
+Branch `agent/howls-grok-pilot` adds only reproducible scripts and documentation
+for a completed local 30-second Grok CLI golden sample. Generated images, videos,
+audio, logs, and full machine-readable reports are intentionally not in Git.
+
+Verified facts:
+
+- five original Grok image-to-video clips, 720x1280, 24 fps, about 6.04 seconds;
+- no OpenRouter or runtime web search;
+- fixed spoiler-free Korean Heami narration and no external music;
+- final MP4: 1080x1920, 30 fps, 900 frames, exactly 30 seconds, H.264/AAC;
+- SHA-256 `9e7b9a2eddb8f8a992572ea7a499f5d2e32f8487c10f5e63204b2116a9ed1e02`;
+- full decode, captions, disclosure, browser readiness, and HTTP range checks pass;
+- local preview `http://127.0.0.1:3200/` and unchanged app
+  `http://localhost:3100/`;
+- no Sites deployment.
+
+The next product decision is whether this single sample's pacing and visual style
+are approved. App integration should not begin until that approval is explicit.
