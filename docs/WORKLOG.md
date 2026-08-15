@@ -10,8 +10,10 @@ Git state, deployment state, and remaining limits.
 - User request: make the GitHub repository carry enough conversation context
   and progress evidence for a new ChatGPT Pro chat, not source files alone.
 - Decision: publish privacy-filtered summaries rather than a raw transcript.
-- Status: in progress on branch `agent/chatgpt-pro-handoff`; this entry must be
-  updated with the commit and Draft PR after the push.
+- Status: verified and pushed on branch `agent/chatgpt-pro-handoff`.
+- Commit: `f6e33d2` created the handoff set; the follow-up commit records the
+  resulting Draft PR and final remote verification.
+- Draft PR: <https://github.com/yoon2566/2026_watchmatch-ai-shorts/pull/1>
 - Changed:
   - added conversation and decision context;
   - added the chronological engineering record;
@@ -20,8 +22,9 @@ Git state, deployment state, and remaining limits.
   - linked the handoff set from the README and project status.
 - Privacy: excluded API key values, account details, callback URLs, raw model
   output, private names, and unrelated conversation.
-- Verification planned: ESLint, TypeScript, Vinext build/contract tests, Markdown
-  link checks, secret scan, staged diff review, and remote SHA verification.
+- Verification: ESLint and TypeScript passed; `npm.cmd test` passed the Vinext
+  production build and 14/14 contract tests; eight Markdown files had zero
+  broken relative links; the staged secret/email scan and diff check passed.
 - Deployment: not requested and not performed.
 - Remaining limitation: ChatGPT Pro can read only the repository and PR content;
   it cannot see the local GPU project, Windows environment, browser state, or
