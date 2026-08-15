@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "dev:local": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-local.ps1",
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",

@@ -14,6 +14,17 @@ Sites 배포본은 `OPENROUTER_API_KEY` 서버 비밀값으로 실제 작품을 
 `C:\Users\User\Desktop\채민\shorts-webapp`에서만 실행하며, Sites 배포본은
 사용자 PC의 ComfyUI, Microsoft Heami, FFmpeg 또는 로컬 SQLite에 연결하지 않습니다.
 
+## 로컬 우선 개발
+
+Windows 사용자 환경변수 `3_openrouter`를 로컬 개발 서버 프로세스에만 연결해
+`http://localhost:3100`에서 실행합니다. 키를 파일이나 로그에 복사하지 않습니다.
+
+```powershell
+npm.cmd run dev:local
+```
+
+화면과 실제 검색을 로컬에서 확인한 뒤, 승인된 최종본만 Sites에 배포합니다.
+
 ## 검증
 
 ```powershell

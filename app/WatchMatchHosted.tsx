@@ -18,6 +18,21 @@ type Recommendation = {
   sources: Array<{label: string; url: string}>;
 };
 
+type DiscoverySource = {
+  url: string;
+  title: string;
+  domain: string;
+  excerpt: string;
+};
+
+type DiscoveryStatus = "complete" | "partial" | "sources_only";
+
+type DiscoverySummary = {
+  citationCount: number;
+  candidateCount: number;
+  rejectedCount: number;
+};
+
 const FLOW_STEPS: Array<{scene: Scene; label: string}> = [
   {scene: "home", label: "메인"},
   {scene: "preferences", label: "취향 선택"},
@@ -144,6 +159,46 @@ function RecommendationCard({
   );
 }
 
+function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
+  return (
+    <details className="discovery-sources" open>
+      <summary>
+        <span>
+          <span className="source-summary-symbol" aria-hidden="true">↗</span>
+          이번 검색에서 확인한 출처 {sources.length}개
+        </span>
+        <small>목록 접기·펼치기</small>
+      </summary>
+      {sources.length > 0 ? (
+        <ol className="discovery-source-list">
+          {sources.map((source, index) => (
+            <li key={`${source.url}-${index}`}>
+              <div className="discovery-source-heading">
+                <span className="source-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h3>{source.title || source.domain || "검색 출처"}</h3>
+                  <span className="source-domain">{source.domain || "웹 출처"}</span>
+                </div>
+              </div>
+              <p>{source.excerpt || "이 페이지에서 작품 정보와 검증 근거를 확인했습니다."}</p>
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${source.title || source.domain || "검색 출처"} 원문 새 창에서 보기`}
+              >
+                원문 보기 <span aria-hidden="true">↗</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="empty-source-note">이번 검색에는 공개할 수 있는 출처가 없습니다.</p>
+      )}
+    </details>
+  );
+}
+
 export default function WatchMatchHosted() {
   const [scene, setScene] = useState<Scene>("home");
   const [mediaType, setMediaType] = useState<MediaType>("movie");
@@ -152,6 +207,14 @@ export default function WatchMatchHosted() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [discoverySources, setDiscoverySources] = useState<DiscoverySource[]>([]);
+  const [discoveryStatus, setDiscoveryStatus] = useState<DiscoveryStatus>("complete");
+  const [discoveryMessage, setDiscoveryMessage] = useState("");
+  const [discoverySummary, setDiscoverySummary] = useState<DiscoverySummary>({
+    citationCount: 0,
+    candidateCount: 0,
+    rejectedCount: 0,
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [productionRun, setProductionRun] = useState(0);
@@ -186,6 +249,10 @@ export default function WatchMatchHosted() {
     setSearching(false);
     setSearchError("");
     setRecommendations([]);
+    setDiscoverySources([]);
+    setDiscoveryStatus("complete");
+    setDiscoveryMessage("");
+    setDiscoverySummary({citationCount: 0, candidateCount: 0, rejectedCount: 0});
     setScene("home");
     setSelectedId(null);
     setProgress(0);
@@ -208,6 +275,10 @@ export default function WatchMatchHosted() {
     setSearchError("");
     setSelectedId(null);
     setRecommendations([]);
+    setDiscoverySources([]);
+    setDiscoveryStatus("complete");
+    setDiscoveryMessage("");
+    setDiscoverySummary({citationCount: 0, candidateCount: 0, rejectedCount: 0});
 
     try {
       const response = await fetch("/api/recommendations", {
@@ -218,17 +289,36 @@ export default function WatchMatchHosted() {
       });
       const payload = await response.json() as {
         recommendations?: Recommendation[];
+        sources?: DiscoverySource[];
+        status?: DiscoveryStatus;
+        summary?: DiscoverySummary;
+        message?: string;
+        model?: string;
         error?: {message?: string};
       };
 
       if (!response.ok) {
         throw new Error(payload.error?.message || "작품을 검색하지 못했습니다.");
       }
-      if (!Array.isArray(payload.recommendations) || payload.recommendations.length !== 3) {
-        throw new Error("검증된 작품 3개를 받지 못했습니다. 다시 시도해 주세요.");
+      if (!Array.isArray(payload.recommendations) || !Array.isArray(payload.sources)) {
+        throw new Error("검색 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.");
       }
       if (controller.signal.aborted) return;
       setRecommendations(payload.recommendations);
+      setDiscoverySources(payload.sources);
+      setDiscoveryStatus(
+        payload.recommendations.length === 0
+          ? "sources_only"
+          : payload.recommendations.length < 3
+            ? "partial"
+            : payload.status ?? "complete",
+      );
+      setDiscoveryMessage(payload.message ?? "");
+      setDiscoverySummary(payload.summary ?? {
+        citationCount: payload.sources.length,
+        candidateCount: payload.recommendations.length,
+        rejectedCount: 0,
+      });
       setScene("recommendations");
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -294,8 +384,8 @@ export default function WatchMatchHosted() {
             <fieldset className="choice-group media-choice">
               <legend>작품 유형</legend>
               <div className="segmented-control">
-                <button type="button" className={mediaType === "movie" ? "is-selected" : ""} aria-pressed={mediaType === "movie"} onClick={() => {setMediaType("movie"); setSelectedId(null); setRecommendations([]); setSearchError("");}}><span>영화</span><small>한 편에 몰입</small></button>
-                <button type="button" className={mediaType === "tv" ? "is-selected" : ""} aria-pressed={mediaType === "tv"} onClick={() => {setMediaType("tv"); setSelectedId(null); setRecommendations([]); setSearchError("");}}><span>TV 시리즈</span><small>길게 정주행</small></button>
+                <button type="button" className={mediaType === "movie" ? "is-selected" : ""} aria-pressed={mediaType === "movie"} onClick={() => {setMediaType("movie"); setSelectedId(null); setRecommendations([]); setDiscoverySources([]); setSearchError("");}}><span>영화</span><small>한 편에 몰입</small></button>
+                <button type="button" className={mediaType === "tv" ? "is-selected" : ""} aria-pressed={mediaType === "tv"} onClick={() => {setMediaType("tv"); setSelectedId(null); setRecommendations([]); setDiscoverySources([]); setSearchError("");}}><span>TV 시리즈</span><small>길게 정주행</small></button>
               </div>
             </fieldset>
             <fieldset className="choice-group">
@@ -326,14 +416,52 @@ export default function WatchMatchHosted() {
           <section className="recommendations-section flow-screen" aria-labelledby="recommendations-title">
             <button type="button" className="screen-back-button" onClick={() => setScene("preferences")}><span aria-hidden="true">←</span> 조건 다시 선택</button>
             <div className="section-heading recommendation-heading">
-              <div><p className="step-kicker">03 · 작품 선택</p><h2 id="recommendations-title">오늘의 후보는 이 세 작품</h2></div>
-              <span className="no-spoiler-badge"><span aria-hidden="true">✓</span> 전부 무스포</span>
+              <div>
+                <p className="step-kicker">03 · 작품 선택</p>
+                <h2 id="recommendations-title">
+                  {recommendations.length === 3
+                    ? "오늘의 후보는 이 세 작품"
+                    : recommendations.length > 0
+                      ? `검증된 후보 ${recommendations.length}개를 찾았어요`
+                      : "작품 확정 전, 검색 근거부터 보여드릴게요"}
+                </h2>
+              </div>
+              {recommendations.length > 0 ? <span className="no-spoiler-badge"><span aria-hidden="true">✓</span> 전부 무스포</span> : null}
             </div>
-            <div className="recommendation-grid" role="radiogroup" aria-label="추천 작품 3개">
-              {recommendations.map((recommendation, index) => <RecommendationCard key={recommendation.id} recommendation={recommendation} index={index} selected={recommendation.id === selectedId} onSelect={() => setSelectedId(recommendation.id)} />)}
-            </div>
+
+            <section className={`discovery-result-notice is-${discoveryStatus}`} aria-live="polite" aria-label="검색 결과 안내">
+              <span className="discovery-result-icon" aria-hidden="true">{discoveryStatus === "complete" ? "✓" : discoveryStatus === "partial" ? "!" : "i"}</span>
+              <div>
+                <strong>
+                  {discoveryStatus === "complete"
+                    ? "작품과 근거 확인을 마쳤습니다."
+                    : discoveryStatus === "partial"
+                      ? "확인된 작품만 먼저 보여드립니다."
+                      : "검색 출처는 찾았지만 작품 검증은 완료하지 못했습니다."}
+                </strong>
+                <p>{discoveryMessage || (recommendations.length > 0 ? "아래 작품을 선택하거나 확인한 출처 전체를 살펴보세요." : "아래 출처를 직접 확인한 뒤 조건을 바꿔 다시 검색할 수 있습니다.")}</p>
+              </div>
+              <dl className="discovery-result-stats" aria-label="검색 검증 요약">
+                <div><dt>확인 출처</dt><dd>{discoverySummary.citationCount}</dd></div>
+                <div><dt>검색 후보</dt><dd>{discoverySummary.candidateCount}</dd></div>
+                <div><dt>검증 제외</dt><dd>{discoverySummary.rejectedCount}</dd></div>
+              </dl>
+            </section>
+
+            {recommendations.length > 0 ? (
+              <div className="recommendation-grid" role="radiogroup" aria-label={`추천 작품 ${recommendations.length}개`}>
+                {recommendations.map((recommendation, index) => <RecommendationCard key={recommendation.id} recommendation={recommendation} index={index} selected={recommendation.id === selectedId} onSelect={() => setSelectedId(recommendation.id)} />)}
+              </div>
+            ) : (
+              <div className="empty-recommendations" role="status">
+                <span aria-hidden="true">◇</span>
+                <div><strong>지금 선택할 수 있는 작품은 없습니다.</strong><p>검색 자체는 완료됐습니다. 아래 출처를 확인하거나 조건을 바꿔 다시 검색해 주세요.</p></div>
+              </div>
+            )}
+
+            <DiscoverySources sources={discoverySources} />
             <div className="create-bar">
-              <div><p>선택한 작품</p><strong>{selected?.title ?? "작품을 골라주세요"}</strong></div>
+              <div><p>선택한 작품</p><strong>{selected?.title ?? (recommendations.length > 0 ? "작품을 골라주세요" : "선택 가능한 작품 없음")}</strong></div>
               <button type="button" className="primary-button" onClick={startProduction} disabled={!selected}>25초 쇼츠 체험 <span aria-hidden="true">▶</span></button>
             </div>
           </section>

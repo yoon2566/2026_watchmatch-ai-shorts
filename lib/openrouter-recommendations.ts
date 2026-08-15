@@ -17,8 +17,10 @@ type RawCompletion = {
 
 export type ValidatedOpenRouterResult<T> = {
   data: T;
+  citations: OpenRouterCitation[];
   model: string;
   repaired: boolean;
+  complete: boolean;
 };
 
 export class OpenRouterRequestError extends Error {
@@ -247,8 +249,10 @@ async function callOpenRouter(
   }
 
   const models = await configuredModels();
+  const [model, ...fallbackModels] = models;
   const body: Record<string, unknown> = {
-    models,
+    model,
+    ...(fallbackModels.length > 0 ? {models: fallbackModels} : {}),
     messages: [
       {role: "system", content: systemPrompt},
       {role: "user", content: userPrompt},
@@ -264,14 +268,26 @@ async function callOpenRouter(
         type: "openrouter:web_search",
         parameters: {
           engine: "exa",
-          max_results: 5,
-          max_total_results: 5,
+          mode: "fast",
+          max_results: 10,
           max_uses: 1,
-          max_characters: 2_000,
+          max_total_results: 10,
+          max_characters: 3_000,
+          allowed_domains: [
+            "imdb.com",
+            "rottentomatoes.com",
+            "commonsensemedia.org",
+            "bbfc.co.uk",
+            "wikipedia.org",
+          ],
         },
       },
     ];
+    // The recommendation budget allows exactly one server-side web search.
+    // max_uses limits this specific tool, while max_tool_calls prevents the
+    // model from starting additional tool steps in the same HTTP request.
     body.max_tool_calls = 1;
+    body.tool_choice = "required";
   }
 
   let response: Response;
@@ -309,7 +325,8 @@ async function callOpenRouter(
   }
 
   const text = extractText(payload);
-  if (!text.trim()) {
+  const citations = extractUrlCitations(payload);
+  if (!text.trim() && citations.length < 1) {
     throw new OpenRouterRequestError(
       "OPENROUTER_EMPTY_RESPONSE",
       "추천 검색 결과가 비어 있습니다.",
@@ -320,7 +337,7 @@ async function callOpenRouter(
 
   return {
     text,
-    citations: extractUrlCitations(payload),
+    citations,
     model: extractModel(payload, models[0]),
   };
 }
@@ -330,15 +347,20 @@ function repairCitationContext(citations: OpenRouterCitation[]): string {
     citations.map((citation) => ({
       url: citation.url,
       title: citation.title,
-      content: citation.content.slice(0, 4_000),
+      content: citation.content.slice(0, 3_000),
     })),
-  ).slice(0, 20_000);
+  ).slice(0, 45_000);
 }
 
 export async function requestValidatedRecommendations<T>(options: {
   systemPrompt: string;
+  repairSystemPrompt?: string;
   userPrompt: string;
   validate: (value: unknown, citations: OpenRouterCitation[]) => T;
+  isComplete?: (value: T) => boolean;
+  describeIncomplete?: (value: T) => string;
+  selectPreferred?: (original: T, repair: T) => T;
+  createEmpty?: () => T;
 }): Promise<ValidatedOpenRouterResult<T>> {
   const original = await callOpenRouter(
     options.systemPrompt,
@@ -346,43 +368,117 @@ export async function requestValidatedRecommendations<T>(options: {
     true,
   );
 
+  let originalData: T | undefined;
+  let validationReason = "unknown validation error";
   try {
-    return {
-      data: options.validate(parseJson(original.text), original.citations),
-      model: original.model,
-      repaired: false,
-    };
-  } catch {
+    originalData = options.validate(parseJson(original.text), original.citations);
+    const complete = options.isComplete?.(originalData) ?? true;
+    if (complete) {
+      return {
+        data: originalData,
+        citations: original.citations,
+        model: original.model,
+        repaired: false,
+        complete: true,
+      };
+    }
+    validationReason = options.describeIncomplete?.(originalData)
+      ?? "the response did not contain enough verified recommendations";
+  } catch (error) {
+    validationReason = error instanceof Error ? error.message : "unknown validation error";
+  }
+
+  console.warn(
+    "OpenRouter recommendation validation failed before repair:",
+    validationReason,
+    `(citations: ${original.citations.length})`,
+  );
+
+  let repair: RawCompletion;
+  try {
     // Exactly one repair is allowed. It deliberately has no tools, so it
     // cannot search again or introduce a second set of unreviewed citations.
-    const repair = await callOpenRouter(
+    repair = await callOpenRouter(
       [
-        options.systemPrompt,
+        options.repairSystemPrompt ?? options.systemPrompt,
+        "This is a correction pass. No web-search tool is available: do not call, simulate, or request another search.",
         "The previous answer failed the JSON or evidence contract.",
-        "Return only corrected JSON. Use only the supplied citation URLs and excerpts.",
-        "Do not introduce a new work, fact, rating, or URL.",
+        "Return only corrected JSON containing one to ten candidate works, ordered by evidence quality.",
+        "You may add, remove, or replace a work only when its title, release year, exact content rating, and every URL are explicitly evidenced by the supplied citation excerpts.",
+        "Do not invent a work, fact, rating, or URL, and do not use knowledge outside the supplied citations.",
       ].join("\n"),
       [
         `Original request: ${options.userPrompt}`,
+        `Validation failure: ${validationReason.slice(0, 2_000)}`,
         `Original answer: ${original.text.slice(0, 16_000)}`,
         `Allowed citations: ${repairCitationContext(original.citations)}`,
       ].join("\n\n"),
       false,
     );
-
-    try {
+  } catch (error) {
+    if (originalData !== undefined) {
       return {
-        data: options.validate(parseJson(repair.text), original.citations),
-        model: repair.model,
-        repaired: true,
+        data: originalData,
+        citations: original.citations,
+        model: original.model,
+        repaired: false,
+        complete: false,
       };
-    } catch {
-      throw new OpenRouterRequestError(
-        "RECOMMENDATIONS_UNVERIFIED",
-        "검색 근거와 시청 등급이 확인된 작품 3개를 만들지 못했습니다.",
-        502,
-        true,
-      );
     }
+    if (options.createEmpty && original.citations.length > 0) {
+      return {
+        data: options.createEmpty(),
+        citations: original.citations,
+        model: original.model,
+        repaired: false,
+        complete: false,
+      };
+    }
+    throw error;
+  }
+
+  try {
+    const repairData = options.validate(parseJson(repair.text), original.citations);
+    const selected = originalData !== undefined && options.selectPreferred
+      ? options.selectPreferred(originalData, repairData)
+      : repairData;
+    const complete = options.isComplete?.(selected) ?? true;
+    return {
+      data: selected,
+      citations: original.citations,
+      model: repair.model,
+      repaired: true,
+      complete,
+    };
+  } catch (error) {
+    console.warn(
+      "OpenRouter recommendation repair validation failed:",
+      error instanceof Error ? error.message : "unknown validation error",
+      `(citations: ${original.citations.length})`,
+    );
+    if (originalData !== undefined) {
+      return {
+        data: originalData,
+        citations: original.citations,
+        model: original.model,
+        repaired: false,
+        complete: false,
+      };
+    }
+    if (options.createEmpty && original.citations.length > 0) {
+      return {
+        data: options.createEmpty(),
+        citations: original.citations,
+        model: original.model,
+        repaired: true,
+        complete: false,
+      };
+    }
+    throw new OpenRouterRequestError(
+      "RECOMMENDATIONS_UNVERIFIED",
+      "검색 응답의 작품 정보를 검증할 수 없습니다.",
+      502,
+      true,
+    );
   }
 }
