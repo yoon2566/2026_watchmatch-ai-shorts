@@ -34,6 +34,8 @@ Last updated: 2026-08-15
 - Exactly one paid Exa search request per recommendation attempt, capped at ten results.
 - A no-search correction pass is allowed when the first model answer is incomplete.
 - The API returns zero to three verified works plus every safe search citation.
+- Display sources require a safe public HTTPS URL, while recommendation evidence
+  additionally requires a non-empty OpenRouter citation excerpt.
 - Partial and source-only results are shown instead of discarding a successful search.
 - OpenRouter keys remain in local or hosting secrets and are not written to Git, logs, SQLite, or browser code.
 - The video result screen currently uses the verified 25-second Sintel technical sample in the hosted prototype.
@@ -43,7 +45,11 @@ Last updated: 2026-08-15
 - ESLint: pass
 - TypeScript: pass
 - Vinext production build: pass
-- Contract and rendered HTML tests: 14/14 pass
+- Contract, component-render, and rendered HTML tests: 18/18 pass
+- URL-only citation regression: six displayable sources return HTTP 200 with
+  `sources_only`; no second model call is made when no evidence excerpts exist.
+- URL safety regression: credentials, HTTP, loopback, link-local, private-network,
+  local-domain, and fragment-only variants are excluded or normalized.
 - Live local request `movie + 스릴러 + thrilling`: HTTP 200 in 10.56 seconds
 - That live request returned ten KMDb citations and zero verified cards because the rating citations did not identify the model-selected works strongly enough. The UI now exposes all ten sources rather than reporting a false search failure.
 

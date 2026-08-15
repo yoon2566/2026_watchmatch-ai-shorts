@@ -21,6 +21,7 @@ The local full project and original media folders are not synchronized by this r
 | Live discovery | Replaced the fixed recommendation list with `/api/recommendations` backed by OpenRouter web search. | Server-only key handling, one search cap, citation extraction, repair without search, and adult-rating tests were added. |
 | Search reliability | Diagnosed repeated HTTP 502 responses after OpenRouter had already returned citations. | Root causes included candidate-count conflicts and strict evidence validation, not missing credentials. |
 | Partial results | Raised candidate inspection to ten and decoupled search sources from verified recommendation cards. | Build, lint, TypeScript, and 14/14 contract tests passed. |
+| URL-only citation preservation | Split displayable URL citations from content-bearing validation evidence. Added public-URL filtering, neutral excerpt fallback, and source-list component rendering. | Lint, TypeScript, Vinext build, and 18/18 tests passed. Six URL-only citations now return `200 + sources_only` without an unnecessary repair call; requests with no public display URL return 502. |
 | Live thriller check | Sent one paid local request for `movie + 스릴러 + thrilling`. | HTTP 200 in 10.56s; ten KMDb citations; zero verified cards because rating citations did not identify the selected works strongly enough; UI now shows all sources. |
 | GitHub baseline | Connected the local repository to `yoon2566/2026_watchmatch-ai-shorts`. | Private repository, `main` pushed at commit `eb3f006350f79375403a1a511a3eff76aefe6097`, local and remote SHA matched. |
 
@@ -70,7 +71,15 @@ Successful responses return:
 - `summary`: citation, candidate, and rejection counts;
 - `message` and the model identifier.
 
-A second model request is allowed only as a correction pass. It receives the original citations and has no web-search tool.
+Display sources are preserved when OpenRouter returns a safe public HTTPS URL,
+even if its optional excerpt is unavailable. Candidate and rating validation use
+only citations with a non-empty excerpt. A second model request is allowed only
+as a correction pass, receives only evidence-bearing citations, and has no
+web-search tool. When no evidence excerpt exists, the server returns the
+source-only state immediately instead of spending a correction call.
+
+OpenRouter documents `url_citation.content` as being added when available:
+<https://openrouter.ai/docs/guides/features/plugins/web-search#parsing-web-search-results>.
 
 ## Credentials and boundaries
 
@@ -94,7 +103,7 @@ npm.cmd test
 ## Known limitations
 
 1. The hosted production step is a technical demonstration, not a live Wan generation job.
-2. Strict rating-source binding can yield zero verified cards even when search produced useful sources.
+2. Strict rating-source binding can yield zero verified cards even when search produced useful sources. URL-only sources remain visible but cannot validate a recommendation.
 3. The current rating parser treats several jurisdictions conservatively and needs a jurisdiction-aware redesign.
 4. An existing Sites deployment can lag behind the GitHub branch; pushing does not deploy.
 5. OpenRouter live behavior is nondeterministic, so mocked regression tests and one bounded live check serve different purposes.

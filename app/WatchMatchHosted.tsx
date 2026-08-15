@@ -159,7 +159,7 @@ function RecommendationCard({
   );
 }
 
-function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
+export function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
   return (
     <details className="discovery-sources" open>
       <summary>
@@ -180,11 +180,11 @@ function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
                   <span className="source-domain">{source.domain || "웹 출처"}</span>
                 </div>
               </div>
-              <p>{source.excerpt || "이 페이지에서 작품 정보와 검증 근거를 확인했습니다."}</p>
+              <p>{source.excerpt || "원문에서 작품 정보를 확인할 수 있습니다."}</p>
               <a
                 href={source.url}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 aria-label={`${source.title || source.domain || "검색 출처"} 원문 새 창에서 보기`}
               >
                 원문 보기 <span aria-hidden="true">↗</span>
@@ -302,6 +302,9 @@ export default function WatchMatchHosted() {
       }
       if (!Array.isArray(payload.recommendations) || !Array.isArray(payload.sources)) {
         throw new Error("검색 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.");
+      }
+      if (payload.recommendations.length === 0 && payload.sources.length === 0) {
+        throw new Error("표시할 수 있는 검색 출처가 없습니다. 조건을 바꿔 다시 시도해 주세요.");
       }
       if (controller.signal.aborted) return;
       setRecommendations(payload.recommendations);

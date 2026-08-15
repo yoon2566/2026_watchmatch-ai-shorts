@@ -117,6 +117,9 @@ The current behavior separates search success from recommendation verification:
 - keep zero to three verified recommendations;
 - attempt one correction call without another web search;
 - always return and display every safe search citation;
+- retain a safe public HTTPS citation for display even when OpenRouter does not
+  provide its optional page excerpt;
+- use only citations with excerpts as evidence for a work or content rating;
 - show `complete`, `partial`, or `sources_only` honestly;
 - disable video production until the user selects a verified work.
 

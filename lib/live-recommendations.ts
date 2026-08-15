@@ -174,6 +174,8 @@ function normalizeUrl(value: string): string {
   if (url.protocol !== "https:" || url.username || url.password) {
     throw new Error("source URL is not public HTTPS");
   }
+  url.hostname = url.hostname.toLocaleLowerCase("en-US").replace(/\.$/u, "");
+  url.hash = "";
   return url.toString();
 }
 
@@ -323,7 +325,6 @@ function validateCandidates(
   if (!isRecord(value) || !Array.isArray(value.recommendations)) {
     throw new Error("response must contain recommendations");
   }
-  if (citations.length < 1) throw new Error("URL citation excerpts are required");
 
   // The model may return more candidates than requested. Evaluating the first
   // ten is safer and more useful than discarding the entire searched response.
@@ -475,7 +476,8 @@ function publicDiscoverySources(citations: OpenRouterCitation[]): PublicDiscover
     seen.add(url);
 
     const domain = new URL(url).hostname.replace(/^www\./iu, "");
-    const excerpt = citation.content.replace(/\s+/gu, " ").trim().slice(0, 280);
+    const excerpt = citation.content.replace(/\s+/gu, " ").trim().slice(0, 280) ||
+      "원문에서 작품 정보를 확인할 수 있습니다.";
     sources.push({
       url,
       title: (citation.title?.trim() || domain).slice(0, 180),

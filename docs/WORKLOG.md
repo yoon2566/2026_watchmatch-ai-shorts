@@ -5,6 +5,35 @@ rewrite earlier entries to make the project look more complete than it was.
 When a change is pushed, add a new entry with the request, decision, evidence,
 Git state, deployment state, and remaining limits.
 
+## 2026-08-15 - Preserve URL-only OpenRouter citations
+
+- User request: apply the ChatGPT Pro review so successful search sources do not
+  disappear when an OpenRouter `url_citation` has a URL but no excerpt content.
+- Root cause: `extractUrlCitations()` discarded citations whose `content` was
+  absent or blank. That removed displayable sources before the source-only
+  recovery path and could turn a successful search into HTTP 502.
+- Decision:
+  - keep every normalized public HTTPS citation for display;
+  - use only non-empty excerpts for recommendation and rating validation;
+  - return `sources_only` immediately when display URLs exist but evidence does
+    not, avoiding a correction call that cannot produce grounded cards;
+  - use a neutral fallback message rather than claiming an empty excerpt was
+    verified;
+  - reject credential-bearing, local, loopback, link-local, private-network,
+    multicast, and non-HTTPS source URLs.
+- Status: verified on branch `agent/chatgpt-pro-handoff`; push and commit are
+  recorded in the follow-up work-log update.
+- Verification: ESLint and TypeScript passed; the Vinext production build and
+  18/18 tests passed. New coverage includes six URL-only sources, mixed display
+  and evidence sources, one-search/no-search-repair boundaries, unsafe URLs,
+  URL deduplication, and rendered source-list links with neutral copy.
+- Paid/live API use: none. The regression uses deterministic mocked OpenRouter
+  responses.
+- Draft PR: <https://github.com/yoon2566/2026_watchmatch-ai-shorts/pull/1>
+- Deployment: not requested and not performed.
+- Remaining limitation: jurisdiction-aware content-rating states remain the
+  next recommendation-quality decision.
+
 ## 2026-08-15 - ChatGPT Pro collaboration handoff
 
 - User request: make the GitHub repository carry enough conversation context

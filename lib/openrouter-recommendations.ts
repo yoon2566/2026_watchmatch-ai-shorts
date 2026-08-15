@@ -66,17 +66,51 @@ function normalizeExternalHttpsUrl(value: string): string | null {
     const url = new URL(value);
     if (url.protocol !== "https:" || url.username || url.password) return null;
 
-    const hostname = url.hostname.toLocaleLowerCase("en-US");
+    const hostname = url.hostname.toLocaleLowerCase("en-US").replace(/\.$/u, "");
+    const unbracketedHostname = hostname.replace(/^\[|\]$/gu, "");
     if (
       !hostname.includes(".") ||
       hostname === "localhost" ||
+      hostname.endsWith(".localhost") ||
       hostname === "0.0.0.0" ||
       hostname === "127.0.0.1" ||
-      hostname === "::1" ||
-      hostname.endsWith(".local")
+      unbracketedHostname === "::" ||
+      unbracketedHostname === "::1" ||
+      hostname.endsWith(".local") ||
+      hostname.endsWith(".internal")
     ) {
       return null;
     }
+
+    const ipv4Match = unbracketedHostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/u);
+    if (ipv4Match) {
+      const octets = ipv4Match.slice(1).map(Number);
+      if (octets.some((octet) => octet < 0 || octet > 255)) return null;
+      const [first, second] = octets;
+      if (
+        first === 0 ||
+        first === 10 ||
+        first === 127 ||
+        (first === 100 && second >= 64 && second <= 127) ||
+        (first === 169 && second === 254) ||
+        (first === 172 && second >= 16 && second <= 31) ||
+        (first === 192 && second === 168) ||
+        (first === 198 && (second === 18 || second === 19)) ||
+        first >= 224
+      ) {
+        return null;
+      }
+    }
+
+    if (
+      /^(?:fc|fd)/u.test(unbracketedHostname) ||
+      /^fe[89ab]/u.test(unbracketedHostname) ||
+      /^ff/u.test(unbracketedHostname)
+    ) {
+      return null;
+    }
+    url.hostname = hostname;
+    url.hash = "";
     return url.toString();
   } catch {
     return null;
@@ -140,8 +174,15 @@ function extractUrlCitations(payload: unknown): OpenRouterCitation[] {
     });
   }
 
-  // A URL without an extract cannot verify a work or its content rating.
-  return [...citations.values()].filter((citation) => citation.content.length > 0);
+  // OpenRouter adds citation content only when it is available. Keep a valid
+  // public URL for display even when it cannot serve as validation evidence.
+  return [...citations.values()];
+}
+
+function citationsWithEvidence(
+  citations: OpenRouterCitation[],
+): OpenRouterCitation[] {
+  return citations.filter((citation) => citation.content.trim().length > 0);
 }
 
 function extractText(payload: unknown): string {
@@ -367,16 +408,18 @@ export async function requestValidatedRecommendations<T>(options: {
     options.userPrompt,
     true,
   );
+  const displayCitations = original.citations;
+  const evidenceCitations = citationsWithEvidence(displayCitations);
 
   let originalData: T | undefined;
   let validationReason = "unknown validation error";
   try {
-    originalData = options.validate(parseJson(original.text), original.citations);
+    originalData = options.validate(parseJson(original.text), evidenceCitations);
     const complete = options.isComplete?.(originalData) ?? true;
     if (complete) {
       return {
         data: originalData,
-        citations: original.citations,
+        citations: displayCitations,
         model: original.model,
         repaired: false,
         complete: true,
@@ -391,8 +434,38 @@ export async function requestValidatedRecommendations<T>(options: {
   console.warn(
     "OpenRouter recommendation validation failed before repair:",
     validationReason,
-    `(citations: ${original.citations.length})`,
+    `(display citations: ${displayCitations.length}, evidence citations: ${evidenceCitations.length})`,
   );
+
+  // With displayable URLs but no excerpts, a correction call cannot create
+  // grounded candidates. Return the honest source-only state without spending
+  // another model call.
+  if (evidenceCitations.length === 0) {
+    if (displayCitations.length > 0 && originalData !== undefined) {
+      return {
+        data: originalData,
+        citations: displayCitations,
+        model: original.model,
+        repaired: false,
+        complete: false,
+      };
+    }
+    if (displayCitations.length > 0 && options.createEmpty) {
+      return {
+        data: options.createEmpty(),
+        citations: displayCitations,
+        model: original.model,
+        repaired: false,
+        complete: false,
+      };
+    }
+    throw new OpenRouterRequestError(
+      "RECOMMENDATIONS_UNVERIFIED",
+      "검색 응답에서 표시 가능한 공개 출처를 확인할 수 없습니다.",
+      502,
+      true,
+    );
+  }
 
   let repair: RawCompletion;
   try {
@@ -411,7 +484,7 @@ export async function requestValidatedRecommendations<T>(options: {
         `Original request: ${options.userPrompt}`,
         `Validation failure: ${validationReason.slice(0, 2_000)}`,
         `Original answer: ${original.text.slice(0, 16_000)}`,
-        `Allowed citations: ${repairCitationContext(original.citations)}`,
+        `Allowed citations: ${repairCitationContext(evidenceCitations)}`,
       ].join("\n\n"),
       false,
     );
@@ -419,16 +492,16 @@ export async function requestValidatedRecommendations<T>(options: {
     if (originalData !== undefined) {
       return {
         data: originalData,
-        citations: original.citations,
+        citations: displayCitations,
         model: original.model,
         repaired: false,
         complete: false,
       };
     }
-    if (options.createEmpty && original.citations.length > 0) {
+    if (options.createEmpty && displayCitations.length > 0) {
       return {
         data: options.createEmpty(),
-        citations: original.citations,
+        citations: displayCitations,
         model: original.model,
         repaired: false,
         complete: false,
@@ -438,14 +511,14 @@ export async function requestValidatedRecommendations<T>(options: {
   }
 
   try {
-    const repairData = options.validate(parseJson(repair.text), original.citations);
+    const repairData = options.validate(parseJson(repair.text), evidenceCitations);
     const selected = originalData !== undefined && options.selectPreferred
       ? options.selectPreferred(originalData, repairData)
       : repairData;
     const complete = options.isComplete?.(selected) ?? true;
     return {
       data: selected,
-      citations: original.citations,
+      citations: displayCitations,
       model: repair.model,
       repaired: true,
       complete,
@@ -454,21 +527,21 @@ export async function requestValidatedRecommendations<T>(options: {
     console.warn(
       "OpenRouter recommendation repair validation failed:",
       error instanceof Error ? error.message : "unknown validation error",
-      `(citations: ${original.citations.length})`,
+      `(display citations: ${displayCitations.length}, evidence citations: ${evidenceCitations.length})`,
     );
     if (originalData !== undefined) {
       return {
         data: originalData,
-        citations: original.citations,
+        citations: displayCitations,
         model: original.model,
         repaired: false,
         complete: false,
       };
     }
-    if (options.createEmpty && original.citations.length > 0) {
+    if (options.createEmpty && displayCitations.length > 0) {
       return {
         data: options.createEmpty(),
-        citations: original.citations,
+        citations: displayCitations,
         model: original.model,
         repaired: true,
         complete: false,

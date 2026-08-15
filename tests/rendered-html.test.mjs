@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createServer as createViteServer } from "vite";
 
 const templateRoot = new URL("../", import.meta.url);
 
@@ -73,6 +77,35 @@ test("server-renders the WatchMatch live discovery shell", async () => {
     /<meta(?=[^>]*\bproperty=["']og:image["'])(?=[^>]*\bcontent=["']http:\/\/localhost\/og-watchmatch\.png["'])[^>]*>/i,
   );
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
+});
+
+test("renders URL-only discovery sources with neutral copy and safe links", async () => {
+  const vite = await createViteServer({
+    appType: "custom",
+    configFile: false,
+    logLevel: "silent",
+    root: fileURLToPath(templateRoot),
+    server: {middlewareMode: true},
+  });
+
+  try {
+    const {DiscoverySources} = await vite.ssrLoadModule("/app/WatchMatchHosted.tsx");
+    const sources = Array.from({length: 6}, (_, index) => ({
+      url: `https://catalog-${index + 1}.example/work-${index + 1}`,
+      title: `Catalog result ${index + 1}`,
+      domain: `catalog-${index + 1}.example`,
+      excerpt: "원문에서 작품 정보를 확인할 수 있습니다.",
+    }));
+    const html = renderToStaticMarkup(createElement(DiscoverySources, {sources}));
+
+    assert.match(html, /이번 검색에서 확인한 출처 6개/);
+    assert.equal((html.match(/원문에서 작품 정보를 확인할 수 있습니다\./gu) ?? []).length, 6);
+    assert.equal((html.match(/target="_blank"/gu) ?? []).length, 6);
+    assert.equal((html.match(/rel="noopener noreferrer"/gu) ?? []).length, 6);
+    assert.equal((html.match(/원문 보기/gu) ?? []).length, 6);
+  } finally {
+    await vite.close();
+  }
 });
 
 test("rejects invalid recommendation filters before any search", async () => {
@@ -542,6 +575,235 @@ test("returns all search sources even when no candidate passes verification", as
       candidateCount: 2,
       rejectedCount: 2,
     });
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+    else process.env.OPENROUTER_API_KEY = previousKey;
+  }
+});
+
+test("keeps six URL-only citations as a source-only result", async () => {
+  const previousKey = process.env.OPENROUTER_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.OPENROUTER_API_KEY = "unit-key";
+  let calls = 0;
+
+  const displayAnnotations = Array.from({length: 6}, (_, index) => ({
+    type: "url_citation",
+    url_citation: {
+      url: index === 0
+        ? "https://catalog-1.example./work-1#result"
+        : `https://catalog-${index + 1}.example/work-${index + 1}#result`,
+      title: `Catalog result ${index + 1}`,
+      ...(index % 3 === 0 ? {} : {content: index % 3 === 1 ? "" : "   "}),
+    },
+  }));
+  const unsafeAnnotations = [
+    "http://unsafe.example/work",
+    "https://10.0.0.1/private",
+    "https://169.254.169.254/metadata",
+    "https://127.0.0.2/loopback",
+    "https://[::1]/loopback",
+    "https://" + "user:password" + "@example.com/private",
+    "https://metadata.internal/private",
+    "https://localhost./private",
+    "https://foo.localhost./private",
+    "https://metadata.internal./private",
+    "https://127.0.0.2./loopback",
+  ].map((url, index) => ({
+    type: "url_citation",
+    url_citation: {url, title: `Unsafe result ${index + 1}`},
+  }));
+  const urlOnlyCandidates = Array.from({length: 3}, (_, index) => groundedWork({
+    title: `Catalog Work ${index + 1}`,
+    year: 2020 + index,
+    url: `https://catalog-${index + 1}.example/work-${index + 1}`,
+    rating: "PG-13",
+    genres: ["스릴러"],
+  }));
+
+  globalThis.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : input.url;
+    if (url !== "https://openrouter.ai/api/v1/chat/completions") {
+      return previousFetch(input, init);
+    }
+    calls += 1;
+    return Response.json({
+      model: "test/model",
+      choices: [{
+        message: {
+          content: JSON.stringify({recommendations: urlOnlyCandidates}),
+          annotations: [...displayAnnotations, ...unsafeAnnotations],
+        },
+      }],
+    });
+  };
+
+  try {
+    const response = await dispatch("/api/recommendations", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        mediaType: "movie",
+        genres: ["스릴러"],
+        mood: "thrilling",
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(calls, 1);
+    const body = await response.json();
+    assert.equal(body.status, "sources_only");
+    assert.deepEqual(body.recommendations, []);
+    assert.equal(body.sources.length, 6);
+    assert.equal(body.sources.every((source) => source.url.startsWith("https://catalog-")), true);
+    assert.equal(body.sources.every((source) => !source.url.includes("#")), true);
+    assert.equal(
+      body.sources.every((source) => source.excerpt === "원문에서 작품 정보를 확인할 수 있습니다."),
+      true,
+    );
+    assert.deepEqual(body.summary, {
+      citationCount: 6,
+      candidateCount: 3,
+      rejectedCount: 3,
+    });
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+    else process.env.OPENROUTER_API_KEY = previousKey;
+  }
+});
+
+test("returns 502 when no citation has a displayable public URL", async () => {
+  const previousKey = process.env.OPENROUTER_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.OPENROUTER_API_KEY = "unit-key";
+  const requestBodies = [];
+
+  globalThis.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : input.url;
+    if (url !== "https://openrouter.ai/api/v1/chat/completions") {
+      return previousFetch(input, init);
+    }
+    requestBodies.push(JSON.parse(init?.body ?? "{}"));
+    return Response.json({
+      model: "test/model",
+      choices: [{
+        message: {
+          content: JSON.stringify({recommendations: []}),
+          annotations: [
+            {type: "url_citation", url_citation: {url: "http://unsafe.example/work"}},
+            {type: "url_citation", url_citation: {url: "https://192.168.0.8/private"}},
+            {type: "url_citation", url_citation: {url: "https://localhost/private"}},
+            {type: "url_citation", url_citation: {url: "https://localhost./private"}},
+            {type: "url_citation", url_citation: {url: "https://metadata.internal./private"}},
+            {type: "url_citation", url_citation: {url: "https://127.0.0.2./loopback"}},
+          ],
+        },
+      }],
+    });
+  };
+
+  try {
+    const response = await dispatch("/api/recommendations", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        mediaType: "movie",
+        genres: ["스릴러"],
+        mood: "thrilling",
+      }),
+    });
+    assert.equal(response.status, 502);
+    assert.equal(requestBodies.length, 1);
+    assert.equal(requestBodies[0].max_tool_calls, 1);
+    assert.equal(requestBodies[0].tools[0].parameters.max_uses, 1);
+    const body = await response.json();
+    assert.equal(body.error.code, "RECOMMENDATIONS_UNVERIFIED");
+    assert.equal(body.recommendations, undefined);
+    assert.equal(body.sources, undefined);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
+    else process.env.OPENROUTER_API_KEY = previousKey;
+  }
+});
+
+test("validates with excerpts while retaining URL-only display sources", async () => {
+  const previousKey = process.env.OPENROUTER_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.OPENROUTER_API_KEY = "unit-key";
+  const requestBodies = [];
+
+  const evidenceBaseUrl = "https://evidence.example/evidence-bound";
+  const work = groundedWork({
+    title: "Evidence Bound",
+    year: 2021,
+    url: `${evidenceBaseUrl}#rating`,
+    rating: "PG-13",
+    genres: ["스릴러"],
+  });
+  const annotations = [
+    {
+      type: "url_citation",
+      url_citation: {
+        url: `${evidenceBaseUrl}#empty-duplicate`,
+        title: "Evidence Bound listing",
+      },
+    },
+    citationFor(work),
+    ...Array.from({length: 5}, (_, index) => ({
+      type: "url_citation",
+      url_citation: {
+        url: `https://display-${index + 1}.example/source`,
+        title: `Display source ${index + 1}`,
+      },
+    })),
+  ];
+
+  globalThis.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : input.url;
+    if (url !== "https://openrouter.ai/api/v1/chat/completions") {
+      return previousFetch(input, init);
+    }
+    requestBodies.push(JSON.parse(init?.body ?? "{}"));
+    return Response.json({
+      model: "test/model",
+      choices: [{
+        message: {
+          content: JSON.stringify({recommendations: [work]}),
+          annotations,
+        },
+      }],
+    });
+  };
+
+  try {
+    const response = await dispatch("/api/recommendations", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        mediaType: "movie",
+        genres: ["스릴러"],
+        mood: "thrilling",
+      }),
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.status, "partial");
+    assert.deepEqual(body.recommendations.map((item) => item.title), ["Evidence Bound"]);
+    assert.equal(body.sources.length, 6);
+    assert.equal(body.sources.filter((source) => source.url === evidenceBaseUrl).length, 1);
+    assert.equal(
+      body.sources.filter((source) => source.excerpt === "원문에서 작품 정보를 확인할 수 있습니다.").length,
+      5,
+    );
+    assert.equal(requestBodies.length, 2);
+    assert.equal(requestBodies.filter((bodyPart) => Array.isArray(bodyPart.tools)).length, 1);
+    assert.equal(requestBodies[0].max_tool_calls, 1);
+    assert.equal(requestBodies[0].tools[0].parameters.max_uses, 1);
+    assert.equal(requestBodies[1].tools, undefined);
+    assert.equal(requestBodies[1].tool_choice, undefined);
+    assert.equal(requestBodies[1].max_tool_calls, undefined);
   } finally {
     globalThis.fetch = previousFetch;
     if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
