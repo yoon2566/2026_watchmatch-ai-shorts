@@ -21,8 +21,8 @@ Git state, deployment state, and remaining limits.
     verified;
   - reject credential-bearing, local, loopback, link-local, private-network,
     multicast, and non-HTTPS source URLs.
-- Status: verified on branch `agent/chatgpt-pro-handoff`; push and commit are
-  recorded in the follow-up work-log update.
+- Status: verified and pushed on branch `agent/chatgpt-pro-handoff`.
+- Commit: `72f7170` (`Preserve URL-only discovery sources`).
 - Verification: ESLint and TypeScript passed; the Vinext production build and
   18/18 tests passed. New coverage includes six URL-only sources, mixed display
   and evidence sources, one-search/no-search-repair boundaries, unsafe URLs,
