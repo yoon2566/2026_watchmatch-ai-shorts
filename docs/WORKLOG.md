@@ -14,8 +14,8 @@ Git state, deployment state, and remaining limits.
   - the local handoff URL is `http://localhost:3100`;
   - reuse a healthy existing server or start `npm.cmd run dev:local` when absent;
   - keep Sites deployment separate and require explicit authorization.
-- Status: verified on branch `agent/chatgpt-pro-handoff`; the resulting commit
-  and push are recorded in the follow-up work-log update.
+- Status: verified and pushed on branch `agent/chatgpt-pro-handoff`.
+- Commit: `a28474d` (`Require GitHub and local preview handoff`).
 - Verification: documentation links and diff checks passed; the existing local
   server returned HTTP 200 at `http://localhost:3100`.
 - Draft PR: <https://github.com/yoon2566/2026_watchmatch-ai-shorts/pull/1>
