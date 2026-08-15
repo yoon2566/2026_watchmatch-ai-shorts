@@ -130,6 +130,25 @@ Git state, deployment state, and remaining limits.
 - Remaining limitation: the hosted video step is a demonstration, not live Wan
   generation from the selected recommendation.
 
+## 2026-08-15 - Manual Netflix KR catalog MVP, phase 1
+
+- User request: replace unreliable web-search recommendations with a Netflix
+  대한민국 recommendation flow based on recently human-verified availability.
+- Decision: separate pending discovery candidates from the public verified
+  catalog; use a 14-day TTL and allow OpenRouter to rank only server-approved IDs.
+- Status: implementation verified on `agent/netflix-curated-catalog`; commit and
+  push follow this log entry. Sites deployment not requested.
+- Changed: catalog schema and validator, ID-only ranker with deterministic
+  fallback, four HTTP 200 result states, Netflix UI labels and availability
+  details, 16 pending candidates, and a manual review form.
+- Human gate: approved catalog intentionally remains empty until Netflix KR and
+  rating checks are returned by the user.
+- Verification: ESLint, TypeScript, Vinext build, and 14/14 contract tests pass;
+  local home and recommendation API both return HTTP 200 at port 3100.
+- Candidate collection: the bounded live command reached OpenRouter but its first
+  result was not valid candidate JSON. The script parser was hardened without
+  another paid retry, and the existing 16 pending suggestions were preserved.
+
 ## Entry template
 
 Copy this section for future material changes:

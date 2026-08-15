@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "provider": "netflix",
+  "region": "KR",
+  "accessMode": "subscription",
+  "entries": []
+}

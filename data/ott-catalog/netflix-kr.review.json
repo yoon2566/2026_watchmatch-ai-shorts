@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "provider": "netflix",
+  "region": "KR",
+  "accessMode": "subscription",
+  "notice": "이 파일의 작품은 추천용 검증 카탈로그가 아닙니다. Netflix 대한민국 로그인 화면과 관람 등급 출처를 사용자가 직접 확인한 뒤에만 netflix-kr.json으로 이동합니다.",
+  "candidates": [
+    {"id":"review-movie-01","title":"길복순","year":2023,"mediaType":"movie","suggestedGenres":["액션","스릴러"],"suggestedMoodTags":["thrilling"],"reviewStatus":"pending"},
+    {"id":"review-movie-02","title":"발레리나","year":2023,"mediaType":"movie","suggestedGenres":["액션","스릴러"],"suggestedMoodTags":["thrilling"],"reviewStatus":"pending"},
+    {"id":"review-movie-03","title":"승리호","year":2021,"mediaType":"movie","suggestedGenres":["SF","액션"],"suggestedMoodTags":["spectacular"],"reviewStatus":"pending"},
+    {"id":"review-movie-04","title":"콜","year":2020,"mediaType":"movie","suggestedGenres":["스릴러","미스터리"],"suggestedMoodTags":["mysterious","thrilling"],"reviewStatus":"pending"},
+    {"id":"review-movie-05","title":"정이","year":2023,"mediaType":"movie","suggestedGenres":["SF","액션"],"suggestedMoodTags":["spectacular","moving"],"reviewStatus":"pending"},
+    {"id":"review-movie-06","title":"20세기 소녀","year":2022,"mediaType":"movie","suggestedGenres":["로맨스","드라마"],"suggestedMoodTags":["warm","moving"],"reviewStatus":"pending"},
+    {"id":"review-movie-07","title":"스마트폰을 떨어뜨렸을 뿐인데","year":2023,"mediaType":"movie","suggestedGenres":["스릴러","미스터리"],"suggestedMoodTags":["thrilling","mysterious"],"reviewStatus":"pending"},
+    {"id":"review-movie-08","title":"독전 2","year":2023,"mediaType":"movie","suggestedGenres":["범죄","액션"],"suggestedMoodTags":["thrilling"],"reviewStatus":"pending"},
+    {"id":"review-tv-01","title":"더 글로리","year":2022,"mediaType":"tv","suggestedGenres":["드라마","스릴러"],"suggestedMoodTags":["thrilling"],"reviewStatus":"pending"},
+    {"id":"review-tv-02","title":"마스크걸","year":2023,"mediaType":"tv","suggestedGenres":["스릴러","범죄"],"suggestedMoodTags":["mysterious"],"reviewStatus":"pending"},
+    {"id":"review-tv-03","title":"정신병동에도 아침이 와요","year":2023,"mediaType":"tv","suggestedGenres":["드라마"],"suggestedMoodTags":["warm","moving"],"reviewStatus":"pending"},
+    {"id":"review-tv-04","title":"경성크리처","year":2023,"mediaType":"tv","suggestedGenres":["스릴러","미스터리"],"suggestedMoodTags":["spectacular","mysterious"],"reviewStatus":"pending"},
+    {"id":"review-tv-05","title":"스위트홈","year":2020,"mediaType":"tv","suggestedGenres":["스릴러","판타지"],"suggestedMoodTags":["spectacular","thrilling"],"reviewStatus":"pending"},
+    {"id":"review-tv-06","title":"이두나!","year":2023,"mediaType":"tv","suggestedGenres":["로맨스","드라마"],"suggestedMoodTags":["warm"],"reviewStatus":"pending"},
+    {"id":"review-tv-07","title":"살인자ㅇ난감","year":2024,"mediaType":"tv","suggestedGenres":["범죄","스릴러"],"suggestedMoodTags":["mysterious","thrilling"],"reviewStatus":"pending"},
+    {"id":"review-tv-08","title":"기생수: 더 그레이","year":2024,"mediaType":"tv","suggestedGenres":["SF","스릴러"],"suggestedMoodTags":["spectacular","thrilling"],"reviewStatus":"pending"}
+  ]
+}

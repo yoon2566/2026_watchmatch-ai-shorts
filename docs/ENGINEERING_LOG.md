@@ -31,10 +31,11 @@ The local full project and original media folders are not synchronized by this r
 Browser
   └─ app/WatchMatchHosted.tsx
        └─ POST /api/recommendations
-            └─ lib/live-recommendations.ts
-                 └─ lib/openrouter-recommendations.ts
-                      └─ OpenRouter Chat Completions
-                           └─ openrouter:web_search (Exa, max one use)
+            └─ lib/catalog-recommendations.ts
+                 ├─ lib/netflix-catalog.ts
+                 │    └─ data/ott-catalog/netflix-kr.json
+                 └─ lib/catalog-ranker.ts
+                      └─ OpenRouter Chat Completions (ID-only, no tools)
 ```
 
 ### Important files
@@ -45,9 +46,11 @@ Browser
 | `app/globals.css` | Responsive black-and-purple WatchMatch design. |
 | `app/api/recommendations/route.ts` | Public recommendation endpoint and error mapping. |
 | `lib/recommendation-contracts.ts` | Request and result types and allowed filters. |
-| `lib/openrouter-recommendations.ts` | Server secret lookup, model request, one-search budget, citations, and no-search repair. |
-| `lib/live-recommendations.ts` | Candidate parsing, genre normalization, rating/source/spoiler validation, partial results, and public source summaries. |
-| `tests/rendered-html.test.mjs` | SSR, API, one-search, partial result, source preservation, rating, duplication, and safety regressions. |
+| `lib/netflix-catalog.ts` | Strict catalog schema, 14-day availability, filtering, scoring, public cards, and result states. |
+| `lib/catalog-ranker.ts` | Optional allowed-ID ranking without web tools and deterministic failure fallback. |
+| `data/ott-catalog/netflix-kr.json` | Server-only approved catalog; currently empty pending human confirmation. |
+| `data/ott-catalog/netflix-kr.review.json` | Non-public pending candidates; never loaded by recommendation runtime. |
+| `tests/rendered-html.test.mjs` | SSR, request scope, catalog validity, expiry, filtering, status, no-tool ranking, fallback, and five-stage regressions. |
 | `scripts/start-local.ps1` | Maps Windows user variable `3_openrouter` into the dev process as `OPENROUTER_API_KEY` without writing the value to disk. |
 | `public/demo/watchmatch-demo.mp4` | Verified 25-second technical sample used by the hosted prototype. |
 
@@ -59,27 +62,25 @@ Request:
 {
   "mediaType": "movie",
   "genres": ["스릴러"],
-  "mood": "thrilling"
+  "mood": "thrilling",
+  "ottProvider": "netflix",
+  "region": "KR",
+  "accessMode": "subscription"
 }
 ```
 
 Successful responses return:
 
-- `recommendations`: zero to three fully verified cards;
-- `sources`: every safe OpenRouter URL citation;
-- `status`: `complete`, `partial`, or `sources_only`;
+- `recommendations`: zero to three manually verified, unexpired cards;
+- `sources`: matching manual availability records;
+- `status`: `complete`, `partial`, `sources_only`, or `empty`;
 - `summary`: citation, candidate, and rejection counts;
 - `message` and the model identifier.
 
-Display sources are preserved when OpenRouter returns a safe public HTTPS URL,
-even if its optional excerpt is unavailable. Candidate and rating validation use
-only citations with a non-empty excerpt. A second model request is allowed only
-as a correction pass, receives only evidence-bearing citations, and has no
-web-search tool. When no evidence excerpt exists, the server returns the
-source-only state immediately instead of spending a correction call.
-
-OpenRouter documents `url_citation.content` as being added when available:
-<https://openrouter.ai/docs/guides/features/plugins/web-search#parsing-web-search-results>.
+OpenRouter receives only IDs and verified tags for at most twelve eligible
+candidates. It cannot add titles, URLs, premises, or facts. Missing keys, HTTP
+errors, timeouts, invalid JSON, and out-of-catalog IDs all fall back to the same
+deterministically scored ordering.
 
 ## Credentials and boundaries
 
@@ -103,10 +104,12 @@ npm.cmd test
 ## Known limitations
 
 1. The hosted production step is a technical demonstration, not a live Wan generation job.
-2. Strict rating-source binding can yield zero verified cards even when search produced useful sources. URL-only sources remain visible but cannot validate a recommendation.
-3. The current rating parser treats several jurisdictions conservatively and needs a jurisdiction-aware redesign.
+2. The approved Netflix catalog is intentionally empty until the user completes
+   the first manual availability and rating checks.
+3. Availability records expire after 14 days and require another human check.
 4. An existing Sites deployment can lag behind the GitHub branch; pushing does not deploy.
-5. OpenRouter live behavior is nondeterministic, so mocked regression tests and one bounded live check serve different purposes.
+5. OpenRouter ranking can change ordering, but it cannot change the approved set;
+   deterministic scoring remains the fallback.
 
 ## Git workflow
 

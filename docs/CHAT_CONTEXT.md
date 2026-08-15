@@ -1,5 +1,17 @@
 # WatchMatch conversation context
 
+## Latest approved direction: manually verified Netflix KR catalog
+
+The user rejected treating general web discovery as an OTT catalog. The approved
+MVP supports Netflix 대한민국 only and requires a human to confirm subscription
+availability and a non-adult rating. Verification is valid for 14 days. Pending
+candidates must stay separate from the public catalog. User recommendation calls
+must not use web search or web fetch; OpenRouter may only rank IDs already allowed
+by the server, with deterministic fallback. TMDB, JustWatch, and automated OTT
+page scraping are out of scope. Preserve the five-screen flow, push each verified
+change to GitHub, keep `http://localhost:3100` available, and do not deploy Sites
+without a separate explicit request.
+
 Last synchronized: 2026-08-15
 
 ## Purpose of this document
@@ -15,7 +27,9 @@ Excluded on purpose:
 
 ## Product in one sentence
 
-WatchMatch helps a user choose a movie or TV series and receive a spoiler-free 25-second vertical recommendation short, using real search evidence and clearly identified AI-generated visuals.
+WatchMatch helps a user choose a manually verified Netflix 대한민국 movie or TV
+series and receive a spoiler-free 25-second vertical recommendation short, with
+human availability records and clearly identified AI-generated visuals.
 
 ## How the request evolved
 

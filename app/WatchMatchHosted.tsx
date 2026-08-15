@@ -15,6 +15,15 @@ type Recommendation = {
   reason: string;
   rating: string;
   checkedAt: string;
+  availability: {
+    provider: "netflix";
+    region: "KR";
+    accessMode: "subscription";
+    status: "verified_manual";
+    checkedAt: string;
+    expiresAt: string;
+    sourceUrl: string;
+  };
   sources: Array<{label: string; url: string}>;
 };
 
@@ -25,7 +34,7 @@ type DiscoverySource = {
   excerpt: string;
 };
 
-type DiscoveryStatus = "complete" | "partial" | "sources_only";
+type DiscoveryStatus = "complete" | "partial" | "sources_only" | "empty";
 
 type DiscoverySummary = {
   citationCount: number;
@@ -128,7 +137,7 @@ function RecommendationCard({
         <span>{recommendation.mediaType === "movie" ? "영화" : "TV 시리즈"}</span>
         <span>등급 {recommendation.rating}</span>
         <span className="safe-badge">스포일러 없음</span>
-        <span className="demo-badge">실시간 검색</span>
+        <span className="demo-badge">Netflix KR 수동 검증</span>
       </div>
       <h3>{recommendation.title}</h3>
       <div className="genre-row" aria-label="장르">
@@ -144,6 +153,18 @@ function RecommendationCard({
           <p className="copy-label">이 작품인 이유</p>
           <p>{recommendation.reason}</p>
         </div>
+      </div>
+      <div className="availability-box">
+        <div>
+          <strong><span aria-hidden="true">✓</span> Netflix 대한민국 · 구독 포함</strong>
+          <span>관리자 직접 확인</span>
+        </div>
+        <dl>
+          <div><dt>확인일</dt><dd>{formatCheckedAt(recommendation.availability.checkedAt)}</dd></div>
+          <div><dt>만료일</dt><dd>{formatCheckedAt(recommendation.availability.expiresAt)}</dd></div>
+          <div><dt>관람 등급</dt><dd>{recommendation.rating}</dd></div>
+        </dl>
+        <p>OTT 편성은 바뀔 수 있습니다. 재생 전 Netflix에서 다시 확인해 주세요.</p>
       </div>
       <div className="source-row">
         <span>정보 확인 · {formatCheckedAt(recommendation.checkedAt)}</span>
@@ -165,7 +186,7 @@ export function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
       <summary>
         <span>
           <span className="source-summary-symbol" aria-hidden="true">↗</span>
-          이번 검색에서 확인한 출처 {sources.length}개
+          수동 검증 기록 {sources.length}개
         </span>
         <small>목록 접기·펼치기</small>
       </summary>
@@ -176,11 +197,11 @@ export function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
               <div className="discovery-source-heading">
                 <span className="source-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                 <div>
-                  <h3>{source.title || source.domain || "검색 출처"}</h3>
-                  <span className="source-domain">{source.domain || "웹 출처"}</span>
+                  <h3>{source.title || source.domain || "검증 기록"}</h3>
+                  <span className="source-domain">{source.domain || "공개 확인 URL"}</span>
                 </div>
               </div>
-              <p>{source.excerpt || "원문에서 작품 정보를 확인할 수 있습니다."}</p>
+              <p>{source.excerpt || "관리자가 기록한 공개 확인 URL입니다."}</p>
               <a
                 href={source.url}
                 target="_blank"
@@ -193,7 +214,7 @@ export function DiscoverySources({sources}: {sources: DiscoverySource[]}) {
           ))}
         </ol>
       ) : (
-        <p className="empty-source-note">이번 검색에는 공개할 수 있는 출처가 없습니다.</p>
+        <p className="empty-source-note">현재 조건에 맞는 수동 검증 기록이 없습니다.</p>
       )}
     </details>
   );
@@ -284,7 +305,14 @@ export default function WatchMatchHosted() {
       const response = await fetch("/api/recommendations", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({mediaType, genres, mood}),
+        body: JSON.stringify({
+          mediaType,
+          genres,
+          mood,
+          ottProvider: "netflix",
+          region: "KR",
+          accessMode: "subscription",
+        }),
         signal: controller.signal,
       });
       const payload = await response.json() as {
@@ -303,15 +331,12 @@ export default function WatchMatchHosted() {
       if (!Array.isArray(payload.recommendations) || !Array.isArray(payload.sources)) {
         throw new Error("검색 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.");
       }
-      if (payload.recommendations.length === 0 && payload.sources.length === 0) {
-        throw new Error("표시할 수 있는 검색 출처가 없습니다. 조건을 바꿔 다시 시도해 주세요.");
-      }
       if (controller.signal.aborted) return;
       setRecommendations(payload.recommendations);
       setDiscoverySources(payload.sources);
       setDiscoveryStatus(
         payload.recommendations.length === 0
-          ? "sources_only"
+          ? payload.sources.length > 0 ? "sources_only" : "empty"
           : payload.recommendations.length < 3
             ? "partial"
             : payload.status ?? "complete",
@@ -350,7 +375,7 @@ export default function WatchMatchHosted() {
           <BrandMark />
           <span>WatchMatch</span>
         </button>
-        <span className="hosted-demo-pill"><span aria-hidden="true">●</span> LIVE DISCOVERY</span>
+        <span className="hosted-demo-pill"><span aria-hidden="true">●</span> VERIFIED OTT CATALOG</span>
       </header>
 
       <main id="top">
@@ -362,17 +387,17 @@ export default function WatchMatchHosted() {
             <div className="hero-orb hero-orb-two" aria-hidden="true" />
             <p className="eyebrow hero-eyebrow"><span aria-hidden="true">✦</span> AI 무스포 작품 큐레이터</p>
             <h1 id="hero-title">볼까 말까,<br /><span>25초면 충분해.</span></h1>
-            <p className="hero-copy">장르와 분위기를 고르고, 검증 가능한 출처를 바탕으로 준비한 작품 세 편과 쇼츠 제작 흐름을 체험해 보세요.</p>
+            <p className="hero-copy">장르와 분위기를 고르고, 최근 14일 안에 직접 확인한 Netflix 대한민국 작품과 쇼츠 제작 흐름을 체험해 보세요.</p>
             <div className="hero-actions">
               <button type="button" className="primary-button hero-start-button" onClick={() => setScene("preferences")}>
                 추천 시작하기 <span aria-hidden="true">→</span>
               </button>
-              <span>작품 추천은 실시간 검색이며, 영상 단계는 검증된 기술 샘플을 사용합니다.</span>
+              <span>추천은 수동 검증 카탈로그를 사용하며, 영상 단계는 검증된 기술 샘플입니다.</span>
             </div>
             <div className="mode-notice demo" role="status">
               <span className="notice-icon" aria-hidden="true">◇</span>
-              <div><strong>LIVE DISCOVERY</strong><p>OpenRouter 웹 검색으로 실제 영화·TV 작품 3개를 찾아요.</p></div>
-              <span className="notice-status">실시간 검색</span>
+              <div><strong>VERIFIED OTT CATALOG</strong><p>Netflix 대한민국 구독 제공과 관람 등급을 직접 확인한 작품만 추천해요.</p></div>
+              <span className="notice-status">14일 유효</span>
             </div>
           </section>
         ) : null}
@@ -407,10 +432,18 @@ export default function WatchMatchHosted() {
                 {MOODS.map((option) => <button type="button" key={option.value} className={mood === option.value ? "is-selected" : ""} aria-pressed={mood === option.value} onClick={() => setMood(option.value)}><span className="mood-symbol" aria-hidden="true">{option.symbol}</span><span>{option.label}</span></button>)}
               </div>
             </fieldset>
-            <p className="demo-choice-note"><span aria-hidden="true">◇</span> 선택한 조건으로 최신 웹 정보를 검색하고, 출처와 시청 등급을 확인한 작품만 보여줍니다.</p>
+            <fieldset className="choice-group ott-choice">
+              <legend>이용 중인 OTT</legend>
+              <button type="button" className="ott-provider-card is-selected" aria-pressed="true">
+                <span className="netflix-wordmark">NETFLIX</span>
+                <span><strong>Netflix 대한민국</strong><small>구독에 포함 · 관리자 직접 확인</small></span>
+                <span className="ott-check" aria-hidden="true">✓</span>
+              </button>
+            </fieldset>
+            <p className="demo-choice-note"><span aria-hidden="true">◇</span> 최근 14일 안에 Netflix 대한민국 제공과 청소년 관람가 등급을 직접 확인한 작품만 보여줍니다.</p>
             {searchError ? <p className="inline-error" role="alert">{searchError}</p> : null}
             <button type="button" className="primary-button search-button" onClick={findRecommendations} disabled={searching}>
-              {searching ? <><span className="button-spinner" aria-hidden="true" /> 실제 작품을 검색하는 중</> : <>내 취향 실제 작품 3개 찾기 <span aria-hidden="true">→</span></>}
+              {searching ? <><span className="button-spinner" aria-hidden="true" /> 검증 목록을 확인하는 중</> : <>Netflix 검증 목록에서 찾기 <span aria-hidden="true">→</span></>}
             </button>
           </section>
         ) : null}
@@ -426,28 +459,30 @@ export default function WatchMatchHosted() {
                     ? "오늘의 후보는 이 세 작품"
                     : recommendations.length > 0
                       ? `검증된 후보 ${recommendations.length}개를 찾았어요`
-                      : "작품 확정 전, 검색 근거부터 보여드릴게요"}
+                      : "현재 선택할 수 있는 검증 작품이 없어요"}
                 </h2>
               </div>
               {recommendations.length > 0 ? <span className="no-spoiler-badge"><span aria-hidden="true">✓</span> 전부 무스포</span> : null}
             </div>
 
             <section className={`discovery-result-notice is-${discoveryStatus}`} aria-live="polite" aria-label="검색 결과 안내">
-              <span className="discovery-result-icon" aria-hidden="true">{discoveryStatus === "complete" ? "✓" : discoveryStatus === "partial" ? "!" : "i"}</span>
+              <span className="discovery-result-icon" aria-hidden="true">{discoveryStatus === "complete" ? "✓" : discoveryStatus === "partial" ? "!" : discoveryStatus === "sources_only" ? "i" : "◇"}</span>
               <div>
                 <strong>
                   {discoveryStatus === "complete"
                     ? "작품과 근거 확인을 마쳤습니다."
                     : discoveryStatus === "partial"
                       ? "확인된 작품만 먼저 보여드립니다."
-                      : "검색 출처는 찾았지만 작품 검증은 완료하지 못했습니다."}
+                      : discoveryStatus === "sources_only"
+                        ? "관련 기록은 있지만 제공 확인이 만료됐습니다."
+                        : "아직 이 조건으로 승인된 작품이 없습니다."}
                 </strong>
-                <p>{discoveryMessage || (recommendations.length > 0 ? "아래 작품을 선택하거나 확인한 출처 전체를 살펴보세요." : "아래 출처를 직접 확인한 뒤 조건을 바꿔 다시 검색할 수 있습니다.")}</p>
+                <p>{discoveryMessage || (recommendations.length > 0 ? "아래 작품을 선택하거나 수동 확인 기록을 살펴보세요." : "조건을 바꾸거나 관리자의 새 확인을 기다려 주세요.")}</p>
               </div>
-              <dl className="discovery-result-stats" aria-label="검색 검증 요약">
-                <div><dt>확인 출처</dt><dd>{discoverySummary.citationCount}</dd></div>
-                <div><dt>검색 후보</dt><dd>{discoverySummary.candidateCount}</dd></div>
-                <div><dt>검증 제외</dt><dd>{discoverySummary.rejectedCount}</dd></div>
+              <dl className="discovery-result-stats" aria-label="카탈로그 검증 요약">
+                <div><dt>검증 기록</dt><dd>{discoverySummary.citationCount}</dd></div>
+                <div><dt>유효 후보</dt><dd>{discoverySummary.candidateCount}</dd></div>
+                <div><dt>만료 제외</dt><dd>{discoverySummary.rejectedCount}</dd></div>
               </dl>
             </section>
 
@@ -458,7 +493,7 @@ export default function WatchMatchHosted() {
             ) : (
               <div className="empty-recommendations" role="status">
                 <span aria-hidden="true">◇</span>
-                <div><strong>지금 선택할 수 있는 작품은 없습니다.</strong><p>검색 자체는 완료됐습니다. 아래 출처를 확인하거나 조건을 바꿔 다시 검색해 주세요.</p></div>
+                <div><strong>지금 선택할 수 있는 작품은 없습니다.</strong><p>확인되지 않은 작품을 억지로 추천하지 않습니다. 조건을 바꾸거나 새 수동 검증을 기다려 주세요.</p></div>
               </div>
             )}
 
@@ -508,7 +543,7 @@ export default function WatchMatchHosted() {
 
         {scene === "home" ? (
           <section className="trust-strip" aria-label="WatchMatch 제작 원칙">
-            <div><span aria-hidden="true">01</span><p><strong>공식 출처 우선</strong>확인 가능한 정보만 추천에 사용해요.</p></div>
+            <div><span aria-hidden="true">01</span><p><strong>수동 OTT 확인</strong>Netflix 대한민국에서 직접 확인한 작품만 사용해요.</p></div>
             <div><span aria-hidden="true">02</span><p><strong>결말은 비밀</strong>반전과 결말을 보여주지 않아요.</p></div>
             <div><span aria-hidden="true">03</span><p><strong>원작 자산 미사용</strong>포스터·예고편·배우 음성을 쓰지 않아요.</p></div>
           </section>
@@ -517,7 +552,7 @@ export default function WatchMatchHosted() {
 
       <footer className="site-footer">
         <div className="footer-brand"><BrandMark small /><strong>WatchMatch</strong></div>
-        <p>작품 추천은 OpenRouter 웹 검색으로 처리합니다. 영상 단계는 AI 생성 기술 샘플이며, 실제 새 영상 생성은 로컬 WatchMatch 앱에서 처리됩니다.</p>
+        <p>작품은 Netflix 대한민국 수동 검증 카탈로그에서 고르고, OpenRouter는 허용된 ID의 순서만 정합니다. 영상 단계는 기술 샘플이며 실제 생성은 로컬 앱에서 처리됩니다.</p>
         <span>© 2026 WatchMatch Prototype</span>
       </footer>
     </div>

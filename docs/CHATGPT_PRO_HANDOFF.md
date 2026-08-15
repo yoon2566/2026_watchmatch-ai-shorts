@@ -1,5 +1,16 @@
 # ChatGPT Pro handoff guide
 
+## Current priority update: Netflix manual verification MVP
+
+The active branch is `agent/netflix-curated-catalog`. The recommendation path is
+being changed from live web discovery to a human-verified Netflix 대한민국 catalog.
+Read `PROJECT_STATUS.md` and `docs/NETFLIX_REVIEW_FORM.md` before proposing the
+next change. The approved catalog is intentionally empty until the user confirms
+availability and rating; the 16 pending candidates are suggestions, not claims.
+Do not propose TMDB, JustWatch scraping, OTT web fetch, or exposing pending works
+as recommendations. Preserve the five screens and do not deploy without a new
+explicit user request.
+
 ## Read these files first
 
 1. `AGENTS.md`
