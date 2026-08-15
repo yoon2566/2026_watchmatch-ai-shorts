@@ -213,3 +213,25 @@ Copy this section for future material changes:
 - Deployment:
 - Known limits and next task:
 ```
+
+## 2026-08-15 - Howl's Moving Castle Grok CLI golden sample
+
+- User request: generate one real 30-second shorts sample with the installed Grok
+  Build CLI before connecting video generation to WatchMatch.
+- Decision: create five original six-second vertical shots with Grok, stop on a
+  ZDR/permission/quota/safety failure, and use only local Heami, synthesized
+  effects, Remotion, and FFmpeg for narration and editing. Do not use OpenRouter,
+  browser Grok, movie assets, OST, or Sites deployment.
+- Status: generated, visually reviewed, fully validated, and prepared for GitHub
+  handoff on `agent/howls-grok-pilot`.
+- Changed: added an isolated Grok launcher, a fixed 30-second Remotion composition,
+  a media verifier, a range-capable preview server, and a concise run report.
+- Verification: five source MP4 files passed `ftyp`, vertical, duration, and full
+  decode checks. The final is 1080x1920, 30 fps, 900 frames, exactly 30 seconds,
+  H.264/AAC, fully decodable, and SHA-256 verified. Ten caption cues, title,
+  disclosure, spoiler boundary, and no-OpenRouter trace boundary passed. Browser
+  media readiness and HTTP range playback passed.
+- Branch / commit / PR: branch created; commit and push follow this entry.
+- Deployment: not requested and not performed.
+- Known limits and next task: generated media stays local; app integration requires
+  a separately approved local project API and real job polling.

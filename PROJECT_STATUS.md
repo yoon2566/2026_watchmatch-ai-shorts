@@ -92,3 +92,21 @@ All checks pass. `npm.cmd test` completed the Vinext production build and 11/11
 contract tests. The local home returned HTTP 200, and two consecutive
 `movie + 스릴러 + 최근` API requests returned three works each with zero ID
 overlap. The verified branch is available on GitHub; Sites was not redeployed.
+
+## Grok CLI video pilot checkpoint
+
+- A separate local golden sample was completed on `agent/howls-grok-pilot` without
+  changing the three-click app, recommendation API, or Sites deployment.
+- Grok Build CLI generated five original 720x1280, six-second vertical clips with
+  `grok-4.6` and medium reasoning. Web search and memory were disabled; OpenRouter
+  was not used.
+- Local Heami, non-musical synthesized effects, Remotion, and FFmpeg assembled an
+  exact 30-second 1080x1920 H.264/AAC short for `하울의 움직이는 성 (2004)`.
+- The final MP4, images, audio, contact sheets, session logs, and machine-readable
+  reports remain under `output/howls_grok_pilot/run-20260815-210220` and are not
+  committed to Git.
+- Automated media validation and browser playback checks passed. The dedicated
+  local preview is `http://127.0.0.1:3200/`; the app remains available at
+  `http://localhost:3100/`.
+- This pilot is not yet wired to the app's production button. Sites was not
+  deployed.

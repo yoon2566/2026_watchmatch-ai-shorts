@@ -1,0 +1,245 @@
+import React from "react";
+import {Audio, Video} from "@remotion/media";
+import {
+  AbsoluteFill,
+  Easing,
+  Sequence,
+  interpolate,
+  staticFile,
+  useCurrentFrame,
+} from "remotion";
+
+type SceneSpec = {
+  from: number;
+  duration: number;
+  src: string;
+  emphasis: string;
+  accent: string;
+};
+
+type Cue = {
+  text: string;
+  startFrame: number;
+  endFrame: number;
+  src: string;
+};
+
+const SCENES: SceneSpec[] = [
+  {from: 0, duration: 156, src: "clips/scene-01.mp4", emphasis: "내 모습이 바뀌었다", accent: "#d8b4fe"},
+  {from: 156, duration: 168, src: "clips/scene-02.mp4", emphasis: "스스로 걷는 성", accent: "#fbbf24"},
+  {from: 324, duration: 168, src: "clips/scene-03.mp4", emphasis: "문 너머의 세계", accent: "#86efac"},
+  {from: 492, duration: 168, src: "clips/scene-04.mp4", emphasis: "다가오는 전쟁", accent: "#fca5a5"},
+  {from: 660, duration: 174, src: "clips/scene-05.mp4", emphasis: "그녀의 선택은?", accent: "#fde68a"},
+];
+
+const CUES: Cue[] = [
+  {text: "하룻밤 사이, 내 모습이 완전히 달라진다면?", startFrame: 8, endFrame: 97, src: "audio/sentence-01.wav"},
+  {text: "그녀는 익숙한 삶을 떠나 안개 속을 걷습니다.", startFrame: 102, endFrame: 184, src: "audio/sentence-02.wav"},
+  {text: "그때 나타난 건, 스스로 걸어 다니는 수상한 성.", startFrame: 189, endFrame: 279, src: "audio/sentence-03.wav"},
+  {text: "문 하나를 열 때마다 전혀 다른 세계가 펼쳐지고,", startFrame: 285, endFrame: 372, src: "audio/sentence-04.wav"},
+  {text: "성 안의 사람들은 모두 비밀을 숨기고 있죠.", startFrame: 378, endFrame: 453, src: "audio/sentence-05.wav"},
+  {text: "낯선 성은 어느새 따뜻한 집이 되지만,", startFrame: 459, endFrame: 531, src: "audio/sentence-06.wav"},
+  {text: "바깥세상은 전쟁의 그림자에 잠식됩니다.", startFrame: 537, endFrame: 615, src: "audio/sentence-07.wav"},
+  {text: "원래 모습을 되찾는 것과, 누군가를 지키는 것.", startFrame: 621, endFrame: 711, src: "audio/sentence-08.wav"},
+  {text: "그녀는 무엇을 선택할까요?", startFrame: 717, endFrame: 775, src: "audio/sentence-09.wav"},
+  {text: "하울의 움직이는 성. 2004.", startFrame: 840, endFrame: 893, src: "audio/sentence-10.wav"},
+];
+
+const SceneVideo: React.FC<{scene: SceneSpec}> = ({scene}) => {
+  const frame = useCurrentFrame();
+  const cutLength = scene.duration / 3;
+  const cutIndex = Math.min(2, Math.floor(frame / cutLength));
+  const cutStart = Math.floor(cutIndex * cutLength);
+  const cutEnd = Math.max(cutStart + 1, Math.ceil((cutIndex + 1) * cutLength) - 1);
+  const baseScales = [1.02, 1.16, 1.08];
+  const targetScales = [1.1, 1.24, 1.17];
+  const positions = ["50% 50%", "45% 43%", "56% 52%"];
+  const opacity = interpolate(frame, [0, 5, scene.duration - 5, scene.duration], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{backgroundColor: "#05030a", opacity, overflow: "hidden"}}>
+      <Video
+        src={staticFile(scene.src)}
+        muted
+        objectFit="cover"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectPosition: positions[cutIndex],
+          scale: interpolate(frame, [cutStart, cutEnd], [baseScales[cutIndex], targetScales[cutIndex]], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+            easing: Easing.inOut(Easing.quad),
+          }),
+          filter: "saturate(.9) contrast(1.08) brightness(.78)",
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          background:
+            "linear-gradient(180deg,rgba(3,2,8,.58) 0%,rgba(3,2,8,.08) 35%,rgba(3,2,8,.12) 64%,rgba(3,2,8,.82) 100%)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 70,
+          right: 70,
+          top: 760,
+          color: "#fff",
+          fontFamily: "Arial, 'Malgun Gothic', sans-serif",
+          fontWeight: 900,
+          fontSize: 96,
+          lineHeight: 1.08,
+          letterSpacing: -5,
+          textAlign: "center",
+          textShadow: "0 6px 28px rgba(0,0,0,.95),0 0 36px rgba(0,0,0,.8)",
+        }}
+      >
+        <span style={{color: scene.accent}}>{scene.emphasis}</span>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const NarrationCaption: React.FC = () => {
+  const frame = useCurrentFrame();
+  const cue = CUES.find((item) => frame >= item.startFrame && frame < item.endFrame);
+  if (!cue) return null;
+  const localFrame = frame - cue.startFrame;
+  const opacity = interpolate(localFrame, [0, 4, Math.max(5, cue.endFrame - cue.startFrame - 5), cue.endFrame - cue.startFrame], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 190,
+        left: 80,
+        right: 80,
+        opacity,
+        padding: "22px 30px 25px",
+        borderRadius: 28,
+        background: "rgba(5,3,10,.64)",
+        border: "1px solid rgba(216,180,254,.28)",
+        color: "white",
+        fontFamily: "Arial, 'Malgun Gothic', sans-serif",
+        fontWeight: 900,
+        fontSize: 62,
+        lineHeight: 1.22,
+        letterSpacing: -3,
+        textAlign: "center",
+        textWrap: "balance",
+        textShadow: "0 4px 18px rgba(0,0,0,.95)",
+      }}
+    >
+      {cue.text}
+    </div>
+  );
+};
+
+const TitleCard: React.FC = () => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 10, 56, 66], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+  const scale = interpolate(frame, [0, 66], [0.96, 1.03], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return (
+    <AbsoluteFill
+      style={{
+        opacity,
+        background: "radial-gradient(circle at 50% 42%,#2b1649 0%,#0b0712 47%,#030205 100%)",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "120px 80px",
+        color: "white",
+        fontFamily: "Arial, 'Malgun Gothic', sans-serif",
+      }}
+    >
+      <div style={{fontSize: 30, fontWeight: 800, color: "#d8b4fe", letterSpacing: 4}}>WATCHMATCH · 무스포 추천</div>
+      <div style={{marginTop: 44, scale, fontSize: 104, fontWeight: 950, lineHeight: 1.12, letterSpacing: -6, textAlign: "center"}}>
+        하울의 움직이는 성
+      </div>
+      <div style={{marginTop: 24, fontSize: 55, fontWeight: 800, color: "#f5d0fe"}}>2004</div>
+      <div
+        style={{
+          position: "absolute",
+          left: 80,
+          right: 80,
+          bottom: 132,
+          fontSize: 31,
+          lineHeight: 1.45,
+          fontWeight: 650,
+          textAlign: "center",
+          color: "rgba(255,255,255,.76)",
+        }}
+      >
+        AI가 제작한 비공식 무스포 추천 영상입니다.<br />실제 영화 이미지·영상·음성을 사용하지 않았습니다.
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const HowlsPilot: React.FC = () => {
+  const frame = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{backgroundColor: "#030205", overflow: "hidden"}}>
+      {SCENES.map((scene) => (
+        <Sequence key={scene.src} from={scene.from} durationInFrames={scene.duration} premountFor={15}>
+          <SceneVideo scene={scene} />
+        </Sequence>
+      ))}
+      <Sequence from={834} durationInFrames={66} premountFor={15}>
+        <TitleCard />
+      </Sequence>
+
+      {CUES.map((cue) => (
+        <Sequence key={cue.src} from={cue.startFrame} durationInFrames={cue.endFrame - cue.startFrame} premountFor={8}>
+          <Audio src={staticFile(cue.src)} volume={1} />
+        </Sequence>
+      ))}
+
+      <Sequence from={0} durationInFrames={21}><Audio src={staticFile("sfx/low-hit.wav")} volume={0.9} /></Sequence>
+      <Sequence from={189} durationInFrames={17}><Audio src={staticFile("sfx/metal-step.wav")} volume={0.75} /></Sequence>
+      <Sequence from={324} durationInFrames={27}><Audio src={staticFile("sfx/door-whoosh.wav")} volume={0.75} /></Sequence>
+      <Sequence from={492} durationInFrames={45}><Audio src={staticFile("sfx/distant-rumble.wav")} volume={0.8} /></Sequence>
+      <Sequence from={660} durationInFrames={27}><Audio src={staticFile("sfx/door-whoosh.wav")} volume={0.55} /></Sequence>
+      <Sequence from={834} durationInFrames={21}><Audio src={staticFile("sfx/low-hit.wav")} volume={0.65} /></Sequence>
+
+      {frame < 834 ? (
+        <AbsoluteFill style={{pointerEvents: "none"}}>
+          <div
+            style={{
+              position: "absolute",
+              top: 82,
+              left: 80,
+              padding: "13px 23px 14px",
+              borderRadius: 999,
+              background: "rgba(109,40,217,.88)",
+              border: "1px solid rgba(216,180,254,.55)",
+              color: "white",
+              fontFamily: "Arial, 'Malgun Gothic', sans-serif",
+              fontSize: 31,
+              fontWeight: 850,
+            }}
+          >
+            무스포 추천
+          </div>
+          <NarrationCaption />
+          <div style={{position: "absolute", left: 80, right: 80, bottom: 70, height: 7, borderRadius: 999, background: "rgba(255,255,255,.18)", overflow: "hidden"}}>
+            <div style={{width: `${(frame / 899) * 100}%`, height: "100%", background: "linear-gradient(90deg,#7c3aed,#e9d5ff)", boxShadow: "0 0 20px #a855f7"}} />
+          </div>
+        </AbsoluteFill>
+      ) : null}
+    </AbsoluteFill>
+  );
+};
