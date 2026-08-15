@@ -51,6 +51,14 @@ npm.cmd run dev:local
 `agent/simple-three-step-recommendations`에 푸시합니다. Sites 배포는 별도 요청이
 있을 때만 수행합니다.
 
+### 화면은 보이지만 버튼이 눌리지 않을 때
+
+큰 소스 변경이나 Vinext 빌드 뒤에 오래 실행 중이던 개발 서버가 남아 있으면
+화면 HTML만 보이고 브라우저 스크립트가 연결되지 않을 수 있습니다. 실행 중인
+로컬 서버를 종료한 뒤 `npm.cmd run dev:local`을 다시 실행하고 페이지를 새로
+고침합니다. 정상 상태에서는 영화/TV 버튼을 누르는 즉시 장르 화면으로
+전환됩니다.
+
 ## 검증
 
 ```powershell

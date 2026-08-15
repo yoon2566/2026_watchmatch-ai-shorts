@@ -179,6 +179,23 @@ Git state, deployment state, and remaining limits.
 - Deployment: not requested and not performed.
 - Known limit: recommendations do not assert that a work is available on any OTT service.
 
+## 2026-08-15 - Restore local client interaction after a stale dev session
+
+- User report: the first movie/TV screen rendered at `localhost:3100`, but its
+  buttons did not react to clicks.
+- Root cause: the long-running Vinext development process failed to load its
+  virtual browser entry after the preceding build and source replacement. The
+  server-rendered HTML remained visible, but React client hydration never ran.
+- Fix: stopped only the process tree serving this project's port 3100 and
+  restarted the existing local startup script in a hidden process.
+- Verification: the local home returned HTTP 200; the browser advanced through
+  movie → thriller → recent; three recommendation cards rendered; the production
+  button stayed disabled until an explicit card choice; no new console error
+  appeared after the restart.
+- Changed: added this incident record and a README recovery note. Application
+  source and recommendation data were unchanged.
+- Deployment: not requested and not performed.
+
 ## Entry template
 
 Copy this section for future material changes:
