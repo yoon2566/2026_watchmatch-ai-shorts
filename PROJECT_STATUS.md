@@ -11,6 +11,14 @@ Last updated: 2026-08-15
 - Existing Sites deployment: `https://watchmatch-ai-shorts-ochre-raven-7562.chatgpt.site`
 - The deployed Sites revision can lag behind local and GitHub changes. Deployment requires a separate explicit request.
 
+## Handoff documents
+
+- Conversation and product decisions: `docs/CHAT_CONTEXT.md`
+- Chronological technical record: `docs/ENGINEERING_LOG.md`
+- Append-only request, verification, and Git record: `docs/WORKLOG.md`
+- ChatGPT Pro read order and starter prompt: `docs/CHATGPT_PRO_HANDOFF.md`
+- Repository rules: `AGENTS.md`
+
 ## Current user flow
 
 1. Main screen

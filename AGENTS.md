@@ -24,3 +24,5 @@
 
 - For application changes, run `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `npm.cmd test` before committing.
 - Record material validation results and known limitations in `PROJECT_STATUS.md`.
+- Append every material user-requested change to `docs/WORKLOG.md` with its request, decision, verification, commit or PR, deployment state, and remaining limits.
+- Update `docs/ENGINEERING_LOG.md` when architecture, API behavior, or verified system capabilities materially change.

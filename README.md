@@ -2,6 +2,20 @@
 
 Sites에 배포하는 WatchMatch의 소유자 전용 호스팅 데모입니다.
 
+## ChatGPT Pro 인수인계
+
+새 ChatGPT Pro 대화에서 작업을 이어갈 때는 다음 문서를 순서대로 읽게 합니다.
+
+1. [`AGENTS.md`](AGENTS.md)
+2. [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+3. [`docs/CHAT_CONTEXT.md`](docs/CHAT_CONTEXT.md)
+4. [`docs/ENGINEERING_LOG.md`](docs/ENGINEERING_LOG.md)
+5. [`docs/WORKLOG.md`](docs/WORKLOG.md)
+6. [`docs/CHATGPT_PRO_HANDOFF.md`](docs/CHATGPT_PRO_HANDOFF.md)
+
+대화 맥락은 개인정보와 비밀값을 제외한 구조화된 기록이며, 기술 변경과 검증
+결과는 엔지니어링 로그와 누적 작업일지에 이어서 기록합니다.
+
 ## 제공 범위
 
 - 메인 → 취향 선택 → 작품 3개 선택 → 제작 중 → 영상 보기의 5단계 흐름
