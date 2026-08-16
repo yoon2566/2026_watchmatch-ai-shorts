@@ -6,7 +6,7 @@ Last updated: 2026-08-16
 
 - GitHub: `https://github.com/yoon2566/2026_watchmatch-ai-shorts`
 - Working branch: `agent/watchmode-live-search`
-- Local project: `C:\Users\User\Desktop\채민\shorts-webapp-sites`
+- Local project: `C:\Users\User\Desktop\채민\2_작품\shorts-webapp-sites`
 - Local URL: `http://localhost:3100`
 - Sites deployment is unchanged; this work is local and GitHub-only.
 

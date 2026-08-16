@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$RunDirectory,
 
-    [string]$ShortsAppDirectory = 'C:\Users\User\Desktop\채민\shorts-webapp'
+    [string]$ShortsAppDirectory = 'C:\Users\User\Desktop\채민\2_작품\shorts-webapp'
 )
 
 $ErrorActionPreference = 'Stop'

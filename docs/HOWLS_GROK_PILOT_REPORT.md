@@ -9,7 +9,7 @@ final narrated short.
 
 The local deliverable is:
 
-`C:\Users\User\Desktop\채민\output\howls_grok_pilot\run-20260815-210220\final\howls_moving_castle_watchmatch_30s.mp4`
+`C:\Users\User\Desktop\채민\2_작품\output\howls_grok_pilot\run-20260815-210220\final\howls_moving_castle_watchmatch_30s.mp4`
 
 The media itself is intentionally excluded from Git.
 

@@ -14,7 +14,7 @@ OTT·영화/TV·장르를 세 번 선택하면 Watchmode 대한민국 구독형 
 
 이 Sites 프로젝트는 사용자의 Windows GPU, ComfyUI, Heami, FFmpeg 또는 로컬
 SQLite에 연결하지 않습니다. 새 Wan 영상 생성은 별도 로컬 프로젝트
-`C:\Users\User\Desktop\채민\shorts-webapp`에서만 처리합니다.
+`C:\Users\User\Desktop\채민\2_작품\shorts-webapp`에서만 처리합니다.
 
 ## 외부 서비스 경계
 

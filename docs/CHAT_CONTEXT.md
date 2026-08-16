@@ -89,7 +89,7 @@ The search contract was intentionally conservative:
 
 ### 5. Local full-pipeline prototype
 
-A separate local project at `C:\Users\User\Desktop\채민\shorts-webapp` implemented the heavier workflow:
+A separate local project at `C:\Users\User\Desktop\채민\2_작품\shorts-webapp` implemented the heavier workflow:
 
 - OpenRouter recommendation and spoiler-free script;
 - SQLite job persistence;

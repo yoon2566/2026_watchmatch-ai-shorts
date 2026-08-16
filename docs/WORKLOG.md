@@ -214,6 +214,22 @@ Copy this section for future material changes:
 - Known limits and next task:
 ```
 
+## 2026-08-16 - Consolidate WatchMatch conversation artifacts under 2_작품
+
+- User request: move all WatchMatch work produced in this conversation into a
+  single top-level `2_작품` folder.
+- Decision: move the 13 WatchMatch-related root items into
+  `C:\Users\User\Desktop\채민\2_작품`, preserve unrelated Korean Code Fair
+  materials at the original root, and update active documentation and pilot
+  defaults to the relocated paths.
+- Status: moved and locally verified; commit and push follow this entry.
+- Verification: 60,250 files / 2,664,594,875 bytes found under the new root;
+  the Sites package, Git HEAD, and 30-second Howl MP4 hashes match their
+  pre-move values; repository state remained clean before path-document edits.
+- Deployment: not requested and not performed.
+- Known limit: one 107-byte transient runtime file disappeared when the related
+  development servers were stopped; no source, repository, or media hash changed.
+
 ## 2026-08-16 - Replace the offline catalog with verified Watchmode live search
 
 - User request: transplant the successful real-search approach from the

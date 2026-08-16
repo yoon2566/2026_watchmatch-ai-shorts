@@ -28,7 +28,7 @@ full local run report remain outside Git.
   sheet.
 
 The verified local run was stored under
-`C:\Users\User\Desktop\채민\output\howls_grok_pilot\run-20260815-210220`.
+`C:\Users\User\Desktop\채민\2_작품\output\howls_grok_pilot\run-20260815-210220`.
 Run artifacts are intentionally not tracked. The preview is served at
 `http://127.0.0.1:3200/`; the WatchMatch app remains at
 `http://localhost:3100/`.
@@ -37,7 +37,7 @@ Run artifacts are intentionally not tracked. The preview is served at
 
 ```powershell
 node scripts\howls-grok-pilot\verify-pilot.mjs `
-  --run "C:\Users\User\Desktop\채민\output\howls_grok_pilot\run-20260815-210220"
+  --run "C:\Users\User\Desktop\채민\2_작품\output\howls_grok_pilot\run-20260815-210220"
 ```
 
 Expected result: `overall: PASS`.

@@ -4,7 +4,7 @@ Last synchronized: 2026-08-15
 
 ## Repository scope
 
-This repository contains the hosted WatchMatch prototype. It is related to, but distinct from, the Windows-only full generation project at `C:\Users\User\Desktop\채민\shorts-webapp`.
+This repository contains the hosted WatchMatch prototype. It is related to, but distinct from, the Windows-only full generation project at `C:\Users\User\Desktop\채민\2_작품\shorts-webapp`.
 
 The local full project and original media folders are not synchronized by this repository. Do not assume a cloud task can access those paths.
 
