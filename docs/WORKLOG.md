@@ -222,13 +222,14 @@ Copy this section for future material changes:
   `C:\Users\User\Desktop\채민\2_작품`, preserve unrelated Korean Code Fair
   materials at the original root, and update active documentation and pilot
   defaults to the relocated paths.
-- Status: moved and locally verified; commit and push follow this entry.
+- Status: moved, locally verified, committed, and pushed.
 - Verification: 60,250 files / 2,664,594,875 bytes found under the new root;
   the Sites package, Git HEAD, and 30-second Howl MP4 hashes match their
   pre-move values; repository state remained clean before path-document edits.
 - Deployment: not requested and not performed.
 - Known limit: one 107-byte transient runtime file disappeared when the related
   development servers were stopped; no source, repository, or media hash changed.
+- Branch / commit / PR: `agent/watchmode-live-search`, commit `1d85c52`, Draft PR #4.
 
 ## 2026-08-16 - Replace the offline catalog with verified Watchmode live search
 
