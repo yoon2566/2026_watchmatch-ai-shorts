@@ -224,7 +224,7 @@ Copy this section for future material changes:
   provider, movie/TV, and one genre; automatically return up to three real
   titles ranked by popularity and rating. Keep OpenRouter out of search and
   preserve explicit work selection plus the existing video demonstration.
-- Status: verified locally; commit and push follow this entry.
+- Status: verified locally and pushed to GitHub.
 - Changed: added server-only Watchmode client and runtime binding, `/api/options`,
   a live `/api/recommendations`, six-OTT UI, ratings, attribution, local secret
   aliasing, tests, metadata, and handoff documentation.
@@ -232,7 +232,7 @@ Copy this section for future material changes:
   local home HTTP 200; KR region, six providers, and ten genres enabled; live
   Netflix/movie/action search returned three titles; no credential names occur
   in rendered HTML.
-- Branch / commit / PR: `agent/watchmode-live-search`; commit and push pending.
+- Branch / commit / PR: `agent/watchmode-live-search`, commit `447f1ef`, Draft PR #4.
 - Deployment: not requested and not performed.
 - Known limits and next task: Watchmode inventory can change and must be checked
   in the OTT app; the video step still shows the common technical sample.
