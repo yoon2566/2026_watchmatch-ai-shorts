@@ -10,7 +10,7 @@
     "dev:local": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-local.ps1",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/watchmode.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "catalog:verify": "node scripts/verify-wikidata-catalog.mjs",
     "db:generate": "drizzle-kit generate"

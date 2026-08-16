@@ -1,112 +1,71 @@
 # WatchMatch project status
 
-Last updated: 2026-08-15
+Last updated: 2026-08-16
 
 ## Repository and delivery
 
 - GitHub: `https://github.com/yoon2566/2026_watchmatch-ai-shorts`
-- Working branch: `agent/simple-three-step-recommendations`
+- Working branch: `agent/watchmode-live-search`
 - Local project: `C:\Users\User\Desktop\채민\shorts-webapp-sites`
-- Local URL after implementation verification: `http://localhost:3100`
-- Sites deployment is intentionally unchanged until a separate request.
+- Local URL: `http://localhost:3100`
+- Sites deployment is unchanged; this work is local and GitHub-only.
 
 ## Active product decision
 
-WatchMatch is being simplified into a three-click, general movie and TV
-recommendation experience. The app opens directly at the first choice and asks
-only for media type, one genre, and an era. Selecting the era immediately returns
-exactly three works from a bundled, development-time-verified catalog.
-
-This replaces the Netflix-only manual catalog and earlier live-discovery designs.
-The recommendation path will not depend on an OTT service, OpenRouter, runtime web
-search, TMDB, JustWatch, or another external catalog. OTT availability is not
-claimed and must be checked separately by the user.
-
-## Target interaction flow
-
-1. Choose `영화` or `TV`.
-2. Choose one of ten genres.
-3. Choose an era:
-   - `고전`: 1999 or earlier
-   - `근래`: 2000 through 2019
-   - `최근`: 2020 or later
-4. View exactly three recommendations and explicitly select one work.
-5. Run the existing hosted production demonstration.
-6. Watch or download the existing verified 25-second technical sample.
-
-Each choice advances immediately. The result screen also provides back and
-restart controls. A recommendation is never selected automatically, and the
-production button remains disabled until the user selects a card.
-
-## Target recommendation architecture
+WatchMatch now uses the successful Watchmode search approach proven in the
+separate `C:\Users\User\Desktop\채민2` prototype. The bundled 90-work catalog
+remains in repository history but is no longer used by the recommendation API.
 
 ```text
-Browser choice: media type -> one genre -> era
-  -> POST /api/recommendations
-  -> validate the three filters and optional excluded IDs
-  -> filter the bundled general-work catalog
-  -> stable priority-and-ID ordering
-  -> return exactly three offline recommendations
-  -> remember viewed IDs per combination in sessionStorage
+OTT -> movie/TV -> one genre
+  -> Watchmode KR subscription search
+  -> popularity-desc candidates with a 6.5 rating floor
+  -> if fewer than three, retry without only the rating floor
+  -> fetch up to three title details in Korean
+  -> explicit work selection -> hosted video demonstration
 ```
 
-- The first reroll for the same combination returns three different works.
-- When fewer than three unseen candidates remain, the server resets that
-  combination's cycle and reports the reset in response metadata.
-- Every one of the 60 media-type, genre, and era combinations must have at least
-  six eligible catalog entries.
-- Catalog titles, years, and work types are checked against Wikidata during
-  development only. The running application makes no Wikidata request.
-- Posters, trailers, full plots, and OTT availability are outside the catalog.
+Supported providers are Netflix, Watcha, Disney+, TVING, Wavve, and Prime
+Video. Supported genres are action, comedy, drama, thriller, romance, science
+fiction, fantasy, horror, mystery, and animation.
 
-## Current implementation state
+## Security and service boundaries
 
-- The three-click implementation is complete on
-  `agent/simple-three-step-recommendations` and is pushed with this status record.
-- The bundled catalog contains 90 works: 45 movies and 45 TV series. All 60
-  media-type, genre, and era combinations contain at least six works.
-- Wikidata development verification passed for all 90 unique QIDs, release
-  years, and movie/TV types. The runtime remains fully offline.
-- The existing hosted production and result screens continue to use the verified
-  technical sample; this Sites project does not run Wan generation.
+- The server reads `WATCHMODE_API_KEY` or the existing Windows user variable
+  `4_WATCHMODE_API_KEY`; the value is not stored in source or sent to the browser.
+- The Watchmode credential is sent only as an `X-API-Key` request header.
+- Recommendation requests do not use OpenRouter, web search, web fetch, TMDB,
+  or JustWatch.
+- Watchmode availability may change. The UI instructs the user to confirm final
+  availability in the selected OTT application.
+- The current video result remains a common technical sample. The separate
+  Howl Grok CLI pilot is not yet generated per selected work.
 
-## Security and boundaries
+## Verified live result
 
-- Recommendation requests do not require or receive an API key.
-- Runtime recommendation code must not call OpenRouter, `web_search`,
-  `web_fetch`, TMDB, JustWatch, Wikidata, or an OTT page.
-- No OTT credentials, authenticated URLs, or availability assertions are stored.
-- Real Wan generation remains in the separate Windows-local project.
-- No Sites deployment is authorized by this implementation request.
+The local server returned HTTP 200. Watchmode reported KR enabled, all six
+providers available, and all ten genres mapped. A live
+`Netflix + movie + action` request returned three works:
 
-## Verified checks
+1. `스파이더맨: 홈커밍 (2017)`
+2. `스파이더맨: 파 프롬 홈 (2019)`
+3. `스파이더맨: 뉴 유니버스 (2018)`
+
+The rendered HTML contained no Watchmode credential names. Automated checks
+cover request validation, KR/provider/media/genre query construction, header
+authentication, rating-floor fallback, partial detail failure, explicit card
+selection, and the existing playable video sample.
+
+## Verification commands
 
 ```powershell
 npm.cmd run lint
 npx.cmd tsc --noEmit
 npm.cmd test
-npm.cmd run catalog:verify
 ```
 
-All checks pass. `npm.cmd test` completed the Vinext production build and 11/11
-contract tests. The local home returned HTTP 200, and two consecutive
-`movie + 스릴러 + 최근` API requests returned three works each with zero ID
-overlap. The verified branch is available on GitHub; Sites was not redeployed.
+## Next step
 
-## Grok CLI video pilot checkpoint
-
-- A separate local golden sample was completed on `agent/howls-grok-pilot` without
-  changing the three-click app, recommendation API, or Sites deployment.
-- Grok Build CLI generated five original 720x1280, six-second vertical clips with
-  `grok-4.6` and medium reasoning. Web search and memory were disabled; OpenRouter
-  was not used.
-- Local Heami, non-musical synthesized effects, Remotion, and FFmpeg assembled an
-  exact 30-second 1080x1920 H.264/AAC short for `하울의 움직이는 성 (2004)`.
-- The final MP4, images, audio, contact sheets, session logs, and machine-readable
-  reports remain under `output/howls_grok_pilot/run-20260815-210220` and are not
-  committed to Git.
-- Automated media validation and browser playback checks passed. The dedicated
-  local preview is `http://127.0.0.1:3200/`; the app remains available at
-  `http://localhost:3100/`.
-- This pilot is not yet wired to the app's production button. Sites was not
-  deployed.
+Replace the common hosted video sample with a local project API that sends only
+the selected Watchmode work ID to a canonical resolver, then runs the approved
+Grok CLI, Heami, Remotion, and FFmpeg pipeline.

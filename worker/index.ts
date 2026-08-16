@@ -3,6 +3,7 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 
 interface Env {
+  WATCHMODE_API_KEY?: string;
   ASSETS: Fetcher;
   DB: D1Database;
   IMAGES: {
@@ -19,6 +20,8 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+type WatchmodeGlobal = typeof globalThis & { __WATCHMODE_API_KEY__?: string };
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -27,6 +30,7 @@ interface ExecutionContext {
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    (globalThis as WatchmodeGlobal).__WATCHMODE_API_KEY__ = env.WATCHMODE_API_KEY;
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {

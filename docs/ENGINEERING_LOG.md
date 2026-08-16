@@ -26,29 +26,31 @@ The local full project and original media folders are not synchronized by this r
 | GitHub baseline | Connected the local repository to `yoon2566/2026_watchmatch-ai-shorts`. | Private repository, `main` pushed at commit `eb3f006350f79375403a1a511a3eff76aefe6097`, local and remote SHA matched. |
 | Manual Netflix catalog | Replaced live search with a human-verified Netflix KR catalog and 14-day availability records. | Phase one was verified, but the zero-approved-entry experience was too burdensome and is now superseded. |
 | Three-click general catalog | Replaced OTT verification with movie/TV, one genre, and era choices backed by a 90-work offline catalog. | All 60 combinations contain at least six works; 11/11 tests, lint, TypeScript, Vinext build, Wikidata verification, and local home/API smoke checks passed on `agent/simple-three-step-recommendations`. |
+| Watchmode live search | Replaced the offline recommendation route with the separately proven Watchmode KR subscription search. | Six providers and ten genres enabled; live Netflix/movie/action returned three real titles; server-only key, build, lint, TypeScript, and 6/6 tests passed on `agent/watchmode-live-search`. |
 
 ## Target architecture under active implementation
 
 ```text
 Browser
   └─ app/WatchMatchHosted.tsx
+       ├─ GET /api/options
        └─ POST /api/recommendations
-            └─ bundled general-work catalog
-                 ├─ media type + one genre + era filter
-                 ├─ stable priority and ID ordering
-                 └─ exactly three results, with excluded-ID cycling
+            └─ server-only Watchmode client
+                 ├─ KR subscription provider + media type + genre
+                 ├─ popularity order + optional 6.5 rating floor
+                 └─ up to three Korean title details
 ```
 
 ### Important files
 
 | File | Responsibility |
 |---|---|
-| `app/WatchMatchHosted.tsx` | Three-click client selection, session rerolls, explicit work selection, demo production, and video result. |
+| `app/WatchMatchHosted.tsx` | OTT/media/genre selection, live results, explicit work selection, demo production, and video result. |
 | `app/globals.css` | Responsive black-and-purple WatchMatch design. |
 | `app/api/recommendations/route.ts` | Public recommendation endpoint and error mapping. |
-| Recommendation contracts and catalog modules | Validate movie/TV, one genre, era, excluded IDs, catalog integrity, stable ordering, and cycle metadata. |
-| Bundled catalog data | Stores basic work identity, genres, spoiler-free premise, tags, priority, and Wikidata provenance without runtime network access. |
-| `tests/rendered-html.test.mjs` | SSR, three-click flow, all 60 catalog combinations, reroll, offline boundaries, explicit selection, and video-stage regressions. |
+| `lib/watchmode.ts` | Validate filters and call Watchmode with KR subscription, provider, media, genre, rating, popularity, and title-detail handling. |
+| `lib/runtime-watchmode.ts` | Resolve the server-only Watchmode credential without exposing it to client code. |
+| `tests/*.test.mjs` | SSR, live-flow contract, request filters, secret boundary, fallback, explicit selection, and video-stage regressions. |
 | `public/demo/watchmatch-demo.mp4` | Verified 25-second technical sample used by the hosted prototype. |
 
 ## Target API behavior
@@ -57,21 +59,17 @@ Request:
 
 ```json
 {
+  "provider": "netflix",
   "mediaType": "movie",
-  "genre": "스릴러",
-  "era": "recent",
-  "excludeIds": ["example-id-1", "example-id-2", "example-id-3"]
+  "genre": "thriller"
 }
 ```
 
-Successful responses return exactly three distinct recommendations plus
-`meta.remaining` and `meta.cycleReset`. If a valid filter combination has fewer
-than six catalog entries, the server reports a catalog-integrity error rather
-than inventing a result. `sessionStorage` holds viewed IDs by combination; it is
-not durable user data.
-
-The runtime recommendation path performs no external fetch and does not require
-OpenRouter or another secret.
+Successful responses return up to three Watchmode recommendations plus provider,
+genre, result-count, rating-filter, and detail-availability metadata. The server
+first applies a 6.5 user-rating floor and removes only that floor when fewer than
+three candidates exist. Provider, KR region, media type, and genre are never
+relaxed.
 
 ## Credentials and boundaries
 

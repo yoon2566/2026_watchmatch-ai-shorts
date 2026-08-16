@@ -214,6 +214,29 @@ Copy this section for future material changes:
 - Known limits and next task:
 ```
 
+## 2026-08-16 - Replace the offline catalog with verified Watchmode live search
+
+- User request: transplant the successful real-search approach from the
+  separate `채민2` prototype and show the working WatchMatch site.
+- Root cause or product reason: the previous three-click app filtered a bundled
+  90-work catalog and therefore could not discover actual OTT inventory.
+- Decision: use Watchmode only for recommendations; select one KR subscription
+  provider, movie/TV, and one genre; automatically return up to three real
+  titles ranked by popularity and rating. Keep OpenRouter out of search and
+  preserve explicit work selection plus the existing video demonstration.
+- Status: verified locally; commit and push follow this entry.
+- Changed: added server-only Watchmode client and runtime binding, `/api/options`,
+  a live `/api/recommendations`, six-OTT UI, ratings, attribution, local secret
+  aliasing, tests, metadata, and handoff documentation.
+- Verification: lint and TypeScript pass; Vinext build and 6/6 tests pass;
+  local home HTTP 200; KR region, six providers, and ten genres enabled; live
+  Netflix/movie/action search returned three titles; no credential names occur
+  in rendered HTML.
+- Branch / commit / PR: `agent/watchmode-live-search`; commit and push pending.
+- Deployment: not requested and not performed.
+- Known limits and next task: Watchmode inventory can change and must be checked
+  in the OTT app; the video step still shows the common technical sample.
+
 ## 2026-08-15 - Howl's Moving Castle Grok CLI golden sample
 
 - User request: generate one real 30-second shorts sample with the installed Grok

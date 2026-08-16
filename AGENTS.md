@@ -10,15 +10,15 @@
 ## Secrets and generated data
 
 - Never commit API keys, bearer tokens, `.env.local`, local user-environment values, logs, build caches, or OpenRouter response payloads containing private data.
-- The recommendation runtime does not require an API key. If a future tool reintroduces credentials, keep them only in local or hosting secret storage.
+- The recommendation runtime uses `WATCHMODE_API_KEY` server-side only. Accept the existing local user variable `4_WATCHMODE_API_KEY`, but never expose either value to browser code, logs, Git, or generated artifacts.
 - Do not add newly generated final videos to Git history by default. Use release assets or external artifact storage when a video deliverable must be shared.
 
 ## Product invariants
 
-- Preserve the explicit interaction flow: movie/TV, one genre, one era, recommendation selection, video production, and video result.
+- Preserve the explicit interaction flow: one OTT, movie/TV, one genre, actual recommendation selection, video production, and video result.
 - Preserve spoiler-free copy, source transparency, and the rule that no work is selected automatically.
-- Every supported media/genre/era combination must return exactly three distinct offline-catalog works and support one fully different reroll.
-- Recommendation requests must not use OpenRouter, web search, web fetch, TMDB, JustWatch, or OTT availability claims.
+- Recommendation requests use Watchmode's KR subscription source, media type, and genre filters and return up to three real candidates ranked by popularity, with a 6.5 user-rating floor when possible.
+- Recommendation requests must not use OpenRouter, web search, web fetch, TMDB, or JustWatch.
 - Keep deployment separate from implementation. Local verification and GitHub push do not authorize a Sites deployment.
 
 ## Verification
