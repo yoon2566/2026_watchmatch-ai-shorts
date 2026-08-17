@@ -5,7 +5,7 @@ Last updated: 2026-08-17
 ## Repository and delivery
 
 - GitHub: `https://github.com/yoon2566/2026_watchmatch-ai-shorts`
-- Working branch: `agent/swapped-grok-pilot`
+- Working branch: `agent/movie-grok-batch`
 - Local project: `C:\Users\User\Desktop\채민\2_작품\shorts-webapp-sites`
 - Local URL: `http://localhost:3100`
 - Sites deployment is unchanged; this work is local and GitHub-only.
@@ -68,9 +68,28 @@ npm.cmd test
 
 ## Next step
 
-Continue adding verified `work ID -> finished MP4` entries, then replace the
-static mapping with an artifact manifest when the weekly production cycle is
-approved.
+The local Grok batch now has 16 of 20 planned works complete. Resume at
+`the-maze-runner` after Grok Build usage is replenished, then connect the newly
+completed masters to Watchmode IDs only after a separate playback export and
+site-mapping verification pass.
+
+## Grok movie batch continuation
+
+The existing run at
+`C:\Users\User\Desktop\채민\2_작품\output\movie_grok_batch\run-20260817-144300`
+was resumed without regenerating completed work. Nine additional 30-second
+masters were completed and verified: `the-shawshank-redemption`, `fight-club`,
+`28-years-later-bone-temple`, `war-machine`, `voice-message-arrived`, `wicked`,
+`anora`, `the-lord-of-the-rings-return-of-the-king`, and `28-years-later`, plus
+`frankenstein` before the next call was attempted. Together with the earlier
+six masters, the batch report now records 16 completed works and 16 works with
+five source clips.
+
+The next work, `the-maze-runner`, stopped before producing scene 1 because Grok
+Build returned HTTP 402 `usage balance exhausted`. The quota failure was not
+retried or bypassed. The final batch verifier passed the 16 completed works and
+recorded `openRouterUsed: false`. Generated images, clips, audio, and final MP4s
+remain outside Git.
 
 ## Sites video library update
 

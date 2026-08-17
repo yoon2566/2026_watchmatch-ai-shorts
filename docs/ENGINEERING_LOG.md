@@ -1,6 +1,6 @@
 # WatchMatch engineering log
 
-Last synchronized: 2026-08-15
+Last synchronized: 2026-08-17
 
 ## Repository scope
 
@@ -28,6 +28,7 @@ The local full project and original media folders are not synchronized by this r
 | Three-click general catalog | Replaced OTT verification with movie/TV, one genre, and era choices backed by a 90-work offline catalog. | All 60 combinations contain at least six works; 11/11 tests, lint, TypeScript, Vinext build, Wikidata verification, and local home/API smoke checks passed on `agent/simple-three-step-recommendations`. |
 | Watchmode live search | Replaced the offline recommendation route with the separately proven Watchmode KR subscription search. | Six providers and ten genres enabled; live Netflix/movie/action returned three real titles; server-only key, build, lint, TypeScript, and 6/6 tests passed on `agent/watchmode-live-search`. |
 | Local work-video binding | Bound Watchmode ID `1901214` to the local-only Swapped MP4 and removed the common-video fallback. | The client checks the same-origin file with `HEAD`; only an existing mapped video can advance to playback, while generated MP4s remain Git-ignored. |
+| Grok batch continuation | Added a resume runner that skips completed masters, preserves saved scene pairs, renders one work at a time, and verifies before advancing. | Nine additional masters were completed; the batch is 16/20 with 80 source clips. The next call stopped on Grok HTTP 402 usage exhaustion, was not retried, and the report records `openRouterUsed: false`. |
 
 ## Target architecture under active implementation
 

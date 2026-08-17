@@ -334,3 +334,23 @@ Copy this section for future material changes:
 - Changed: added six mappings, accessible caption tracks, a repeatable export
   script, hosted-player wording, and regression coverage.
 - Deployment scope: the existing private WatchMatch Sites project; no new site.
+
+## 2026-08-17 - Resume the Grok movie batch after usage reset
+
+- User request: continue the interrupted Grok Build CLI video production after
+  resetting usage, with no OpenRouter use.
+- Decision: resume the existing run in place, reuse every completed scene and
+  master, render and verify one work before advancing, and stop immediately on
+  quota, permission, safety, or ZDR failures.
+- Changed: added `Continue-MovieBatch.ps1`, which skips completed masters,
+  generates only missing image/clip pairs, renders locally, runs the batch
+  verifier, and confirms the current work before moving forward.
+- Result: nine additional 30-second masters were completed in this continuation.
+  The final report records 16/20 completed works, 16 works with five source
+  clips, and `openRouterUsed: false`.
+- Stop reason: `the-maze-runner` scene 1 returned HTTP 402 `Grok Build usage
+  balance exhausted` before saving media. It was not retried or bypassed.
+- Local artifacts: generated media remains under
+  `C:\Users\User\Desktop\채민\2_작품\output\movie_grok_batch\run-20260817-144300`
+  and is excluded from Git.
+- Deployment: not requested and not performed.

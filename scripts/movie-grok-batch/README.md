@@ -19,6 +19,19 @@ media stays under `2_작품/output/movie_grok_batch` and is excluded from Git.
 Use `-MaximumScenes 1` for a paid preflight and omit it only after inspecting
 the first generated clip.
 
+Resume an interrupted run without regenerating completed works or saved
+image/clip pairs:
+
+```powershell
+& .\scripts\movie-grok-batch\Continue-MovieBatch.ps1 `
+  -RunDirectory 'C:\absolute\movie-batch\run-directory' `
+  -StartSlug 'first-incomplete-work-slug'
+```
+
+The continuation runner renders and verifies each completed work before moving
+to the next one. Do not wrap it with legacy `powershell.exe`; run it in the
+current PowerShell 7 session so child-environment isolation remains compatible.
+
 Render and verify any work after its five Grok clips exist:
 
 ```powershell
@@ -33,3 +46,7 @@ Render and verify any work after its five Grok clips exist:
 If Grok returns a non-zero exit only after both media files were saved, the
 runner keeps those non-empty outputs and continues. A real quota, safety,
 permission, or ZDR failure with missing media still stops the batch.
+
+The 2026-08-17 continuation stopped correctly at `the-maze-runner` after Grok
+returned HTTP 402 `usage balance exhausted`. At that checkpoint the verifier
+reported 16/20 completed works, 80 source clips, and no OpenRouter use.
