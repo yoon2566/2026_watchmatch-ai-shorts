@@ -57,6 +57,8 @@ test("only the mapped Watchmode work exposes its local-only video", async () => 
   assert.match(source, /disabled=\{!selectedVideo\}/);
   assert.match(source, /쇼츠 제작 완료/);
   assert.match(source, /쇼츠 준비 중/);
+  assert.match(source, /영상 크게 보기/);
+  assert.match(source, /requestFullscreen/);
   assert.doesNotMatch(source, /\/demo\/watchmatch-demo\.mp4/);
   assert.match(catalog, /1901214/);
   assert.match(catalog, /\/local-videos\/swapped_watchmatch_30s\.mp4/);

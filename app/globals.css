@@ -2006,7 +2006,7 @@ main {
 
 .result-panel {
   display: grid;
-  grid-template-columns: 1.04fr 0.7fr;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.78fr);
   align-items: center;
   gap: clamp(32px, 8vw, 90px);
   padding: clamp(28px, 6vw, 64px);
@@ -2064,7 +2064,7 @@ main {
 
 .phone-frame {
   position: relative;
-  width: min(290px, 100%);
+  width: min(420px, 100%);
   justify-self: center;
   padding: 9px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -2121,6 +2121,17 @@ main {
   height: 100%;
   object-fit: cover;
   background: #060608;
+}
+
+.video-shell:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  background: #000;
+}
+
+.video-shell:fullscreen video {
+  object-fit: contain;
 }
 
 .video-placeholder {
@@ -2559,7 +2570,7 @@ main {
   }
 
   .phone-frame {
-    width: min(330px, 84vw);
+    width: min(390px, 92vw);
     grid-row: 1;
   }
 

@@ -231,6 +231,16 @@ Copy this section for future material changes:
   is explicitly ignored and remains on this PC.
 - Deployment: not requested and not performed.
 
+## 2026-08-17 - Enlarge the local result video
+
+- User request: make the result video easier to see because the desktop-sized
+  page appears very small when viewed from a phone.
+- Decision: increase the desktop player from 290px to 420px, increase the
+  compact layout to 390px/92vw, and add a dedicated `영상 크게 보기` control
+  that requests native fullscreen playback.
+- Status: implemented; verification and Git handoff recorded at completion.
+- Deployment: not requested and not performed.
+
 ## 2026-08-16 - Consolidate WatchMatch conversation artifacts under 2_작품
 
 - User request: move all WatchMatch work produced in this conversation into a

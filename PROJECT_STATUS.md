@@ -84,3 +84,5 @@ The WatchMatch local app now maps this pilot to Watchmode ID `1901214`. A live
 `Netflix + movie + animation` request returned the title as one of three
 recommendations. The same-origin MP4 endpoint returned HTTP 200 for `HEAD` and
 HTTP 206 for a byte-range request, while Git ignores the 36,082,137-byte file.
+The result player is 420px wide on desktop, up to 390px/92vw on compact
+screens, and provides a native fullscreen button for remote/mobile viewing.

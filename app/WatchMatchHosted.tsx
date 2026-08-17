@@ -114,6 +114,7 @@ export default function WatchMatchHosted() {
   const [productionRun, setProductionRun] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const screenTitleRef = useRef<HTMLHeadingElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const providers = options?.providers ?? FALLBACK_PROVIDERS;
   const genres = options?.genres ?? FALLBACK_GENRES;
@@ -213,6 +214,16 @@ export default function WatchMatchHosted() {
     setProgress(0); setProductionRun((run) => run + 1); setScene("production");
   };
 
+  const showVideoFullscreen = () => {
+    const video = videoRef.current as (HTMLVideoElement & {webkitEnterFullscreen?: () => void}) | null;
+    if (!video) return;
+    if (video.requestFullscreen) {
+      void video.requestFullscreen();
+      return;
+    }
+    video.webkitEnterFullscreen?.();
+  };
+
   const activePipelineIndex = Math.min(7, Math.floor(progress / 12.5));
   const providerLabel = providers.find((item) => item.key === provider)?.label ?? "";
   const genreLabel = genres.find((item) => item.key === genre)?.label ?? "";
@@ -268,7 +279,7 @@ export default function WatchMatchHosted() {
 
         {scene === "production" ? <section className="project-section flow-screen production-screen" aria-labelledby="production-title"><section className="pipeline-panel"><div className="pipeline-heading"><div><p className="eyebrow">05 · 영상 준비 중</p><h1 id="production-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title}</h1></div><span className="render-id">LOCAL VIDEO</span></div><div className="active-job"><div className="job-orbit" aria-hidden="true"><span /></div><div><p aria-live="polite">{PIPELINE_STEPS[activePipelineIndex]}</p><span>선택한 작품에 연결된 로컬 제작 영상을 준비합니다.</span></div><strong>{progress}%</strong></div><div className="progress-track" role="progressbar" aria-label="쇼츠 준비 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{width: `${progress}%`}} /></div><ol className="pipeline-steps">{PIPELINE_STEPS.map((label, index) => <li key={label} className={`${index < activePipelineIndex ? "is-complete" : ""} ${index === activePipelineIndex ? "is-active" : ""}`}><span className="step-marker" aria-hidden="true">{index < activePipelineIndex ? "✓" : String(index + 1).padStart(2, "0")}</span><span>{label}</span></li>)}</ol></section><button type="button" className="text-button cancel-button" onClick={() => setScene("recommendations")}>영상 준비 중단</button></section> : null}
 
-        {scene === "result" && selectedVideo ? <section className="project-section flow-screen result-screen" aria-labelledby="result-title"><section className="result-panel"><div className="result-copy"><p className="step-kicker">06 · 영상 보기</p><h1 id="result-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title} 쇼츠를 확인하세요.</h1><p>Watchmode의 실제 검색 결과에서 선택한 작품 ID와 로컬에서 제작한 전용 MP4를 연결했습니다. 영상 파일은 GitHub가 아니라 이 PC에만 보관됩니다.</p><div className="result-facts"><div><span>선택 작품</span><strong>{selected?.title}</strong></div><div><span>검색 OTT</span><strong>{providerLabel}</strong></div><div><span>영상 검증</span><strong>1080×1920 · H.264/AAC</strong></div></div><div className="result-actions"><a className="primary-button download-button" href={selectedVideo.src} download>로컬 MP4 다운로드 <span aria-hidden="true">↓</span></a><button type="button" className="secondary-button" onClick={startProduction}>다시 보기</button><button type="button" className="text-button" onClick={reset}>처음부터 추천받기</button></div></div><div className="phone-frame"><div className="phone-top" aria-hidden="true"><span /></div><div className="video-shell"><video src={selectedVideo.src} controls playsInline preload="metadata" aria-label={`${selected?.title} WatchMatch 쇼츠`}><track kind="captions" src={selectedVideo.captionsSrc} srcLang="ko" label="한국어" default />브라우저에서 영상을 재생할 수 없습니다.</video><span className="video-label">AI 생성 · {selectedVideo.label}</span></div></div></section></section> : null}
+        {scene === "result" && selectedVideo ? <section className="project-section flow-screen result-screen" aria-labelledby="result-title"><section className="result-panel"><div className="result-copy"><p className="step-kicker">06 · 영상 보기</p><h1 id="result-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title} 쇼츠를 확인하세요.</h1><p>Watchmode의 실제 검색 결과에서 선택한 작품 ID와 로컬에서 제작한 전용 MP4를 연결했습니다. 영상 파일은 GitHub가 아니라 이 PC에만 보관됩니다.</p><div className="result-facts"><div><span>선택 작품</span><strong>{selected?.title}</strong></div><div><span>검색 OTT</span><strong>{providerLabel}</strong></div><div><span>영상 검증</span><strong>1080×1920 · H.264/AAC</strong></div></div><div className="result-actions"><button type="button" className="primary-button" onClick={showVideoFullscreen}>영상 크게 보기 <span aria-hidden="true">⛶</span></button><a className="secondary-button download-button" href={selectedVideo.src} download>로컬 MP4 다운로드 <span aria-hidden="true">↓</span></a><button type="button" className="secondary-button" onClick={startProduction}>다시 보기</button><button type="button" className="text-button" onClick={reset}>처음부터 추천받기</button></div></div><div className="phone-frame"><div className="phone-top" aria-hidden="true"><span /></div><div className="video-shell"><video ref={videoRef} src={selectedVideo.src} controls playsInline preload="metadata" aria-label={`${selected?.title} WatchMatch 쇼츠`}><track kind="captions" src={selectedVideo.captionsSrc} srcLang="ko" label="한국어" default />브라우저에서 영상을 재생할 수 없습니다.</video><span className="video-label">AI 생성 · {selectedVideo.label}</span></div></div></section></section> : null}
       </main>
       <footer className="site-footer"><div className="footer-brand"><BrandMark small /><strong>WatchMatch</strong></div><p>대한민국 OTT 작품 정보는 Watchmode 검색 결과를 사용합니다. 실제 제공 여부는 각 OTT 서비스에서 확인해 주세요.</p><span>Data provided by Watchmode</span></footer>
     </div>
