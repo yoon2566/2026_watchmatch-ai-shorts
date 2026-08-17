@@ -1,0 +1,66 @@
+import React from "react";
+import {Audio, Video} from "@remotion/media";
+import {AbsoluteFill, Easing, Sequence, interpolate, staticFile, useCurrentFrame} from "remotion";
+import movie from "./movie.json";
+
+type Cue = {text: string; startFrame: number; endFrame: number; src: string};
+type MovieData = {title: string; year: number; emphasis: string[]; cues: Cue[]};
+const DATA = movie as MovieData;
+const ACCENTS = ["#a78bfa", "#7dd3fc", "#fde68a", "#fb7185", "#86efac"];
+const SCENE_FROM = [0, 162, 324, 486, 648];
+const SCENE_DURATION = [162, 162, 162, 162, 186];
+
+const SceneVideo: React.FC<{index: number}> = ({index}) => {
+  const frame = useCurrentFrame();
+  const duration = SCENE_DURATION[index];
+  const cutLength = duration / 3;
+  const cutIndex = Math.min(2, Math.floor(frame / cutLength));
+  const cutStart = Math.floor(cutIndex * cutLength);
+  const cutEnd = Math.max(cutStart + 1, Math.ceil((cutIndex + 1) * cutLength) - 1);
+  const opacity = interpolate(frame, [0, 5, duration - 5, duration], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
+  return <AbsoluteFill style={{backgroundColor: "#02030a", opacity, overflow: "hidden"}}>
+    <Video src={staticFile(`clips/scene-0${index + 1}.mp4`)} muted objectFit="cover" style={{width: "100%", height: "100%", objectPosition: ["50% 50%", "44% 43%", "57% 52%"][cutIndex], scale: interpolate(frame, [cutStart, cutEnd], [[1.02, 1.15, 1.08][cutIndex], [1.1, 1.23, 1.17][cutIndex]], {extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad)}), filter: "saturate(.96) contrast(1.07) brightness(.78)"}} />
+    <AbsoluteFill style={{background: "linear-gradient(180deg,rgba(2,3,10,.68) 0%,rgba(2,3,10,.06) 36%,rgba(2,3,10,.15) 63%,rgba(2,3,10,.88) 100%)"}} />
+    <div style={{position: "absolute", left: 70, right: 70, top: 780, color: ACCENTS[index], fontFamily: "Arial, 'Malgun Gothic', sans-serif", fontWeight: 950, fontSize: 92, lineHeight: 1.08, letterSpacing: -5, textAlign: "center", textShadow: "0 6px 30px rgba(0,0,0,.98),0 0 40px rgba(0,0,0,.86)"}}>{DATA.emphasis[index]}</div>
+  </AbsoluteFill>;
+};
+
+const NarrationCaption: React.FC = () => {
+  const frame = useCurrentFrame();
+  const cue = DATA.cues.find((item) => frame >= item.startFrame && frame < item.endFrame);
+  if (!cue) return null;
+  const local = frame - cue.startFrame;
+  const duration = cue.endFrame - cue.startFrame;
+  return <div style={{position: "absolute", top: 180, left: 80, right: 80, opacity: interpolate(local, [0, 4, Math.max(5, duration - 5), duration], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"}), padding: "22px 30px 25px", borderRadius: 28, background: "rgba(2,4,12,.72)", border: "1px solid rgba(167,139,250,.42)", color: "white", fontFamily: "Arial, 'Malgun Gothic', sans-serif", fontWeight: 900, fontSize: 60, lineHeight: 1.22, letterSpacing: -3, textAlign: "center", textShadow: "0 4px 18px rgba(0,0,0,.95)"}}>{cue.text}</div>;
+};
+
+const TitleCard: React.FC = () => {
+  const frame = useCurrentFrame();
+  const titleSize = DATA.title.length > 18 ? 72 : DATA.title.length > 12 ? 82 : 96;
+  return <AbsoluteFill style={{opacity: interpolate(frame, [0, 9, 56, 66], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"}), background: "radial-gradient(circle at 50% 38%,#312e81 0%,#111027 48%,#02030a 100%)", alignItems: "center", justifyContent: "center", padding: "120px 74px", color: "white", fontFamily: "Arial, 'Malgun Gothic', sans-serif"}}>
+    <div style={{fontSize: 30, fontWeight: 850, color: "#c4b5fd", letterSpacing: 4}}>WATCHMATCH · 무스포 추천</div>
+    <div style={{marginTop: 46, scale: interpolate(frame, [0, 66], [0.96, 1.03], {extrapolateLeft: "clamp", extrapolateRight: "clamp"}), fontSize: titleSize, fontWeight: 950, lineHeight: 1.12, letterSpacing: -6, textAlign: "center", wordBreak: "keep-all"}}>{DATA.title}</div>
+    <div style={{marginTop: 28, fontSize: 54, fontWeight: 850, color: "#fde68a"}}>{DATA.year}</div>
+    <div style={{position: "absolute", left: 80, right: 80, bottom: 128, fontSize: 31, lineHeight: 1.45, fontWeight: 650, textAlign: "center", color: "rgba(255,255,255,.78)"}}>AI가 제작한 비공식 무스포 추천 영상입니다.<br />실제 영화 이미지·영상·음성을 사용하지 않았습니다.</div>
+  </AbsoluteFill>;
+};
+
+export const MoviePilot: React.FC = () => {
+  const frame = useCurrentFrame();
+  return <AbsoluteFill style={{backgroundColor: "#02030a", overflow: "hidden"}}>
+    {SCENE_FROM.map((from, index) => <Sequence key={from} from={from} durationInFrames={SCENE_DURATION[index]} premountFor={15}><SceneVideo index={index} /></Sequence>)}
+    <Sequence from={834} durationInFrames={66} premountFor={15}><TitleCard /></Sequence>
+    {DATA.cues.map((cue) => <Sequence key={cue.src} from={cue.startFrame} durationInFrames={cue.endFrame - cue.startFrame} premountFor={8}><Audio src={staticFile(cue.src)} volume={1} /></Sequence>)}
+    <Sequence from={0} durationInFrames={21}><Audio src={staticFile("sfx/low-hit.wav")} volume={0.7} /></Sequence>
+    <Sequence from={162} durationInFrames={24}><Audio src={staticFile("sfx/whoosh.wav")} volume={0.48} /></Sequence>
+    <Sequence from={486} durationInFrames={45}><Audio src={staticFile("sfx/rumble.wav")} volume={0.38} /></Sequence>
+    <Sequence from={648} durationInFrames={24}><Audio src={staticFile("sfx/whoosh.wav")} volume={0.42} /></Sequence>
+    <Sequence from={834} durationInFrames={21}><Audio src={staticFile("sfx/low-hit.wav")} volume={0.58} /></Sequence>
+    {frame < 834 ? <AbsoluteFill style={{pointerEvents: "none"}}>
+      <div style={{position: "absolute", top: 80, left: 80, padding: "13px 23px 14px", borderRadius: 999, background: "rgba(109,40,217,.9)", border: "1px solid rgba(196,181,253,.6)", color: "white", fontFamily: "Arial, 'Malgun Gothic', sans-serif", fontSize: 31, fontWeight: 850}}>무스포 추천</div>
+      <NarrationCaption />
+      <div style={{position: "absolute", left: 80, right: 80, bottom: 70, height: 7, borderRadius: 999, background: "rgba(255,255,255,.18)", overflow: "hidden"}}><div style={{width: `${(frame / 899) * 100}%`, height: "100%", background: "linear-gradient(90deg,#7c3aed,#fde68a)", boxShadow: "0 0 20px #a78bfa"}} /></div>
+    </AbsoluteFill> : null}
+  </AbsoluteFill>;
+};
+
