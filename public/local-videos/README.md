@@ -7,8 +7,11 @@ request before showing the video as available.
 Local mapping currently expected:
 
 - Watchmode work ID `1901214`
-- `swapped_watchmatch_30s.mp4`
-- SHA-256 `5b2a18d147ac91be3a0f394ea45c93fa59dae69023a7d8e3a322f77bb23e6d17`
+- Sites playback copy: `swapped_watchmatch_30s_sites.mp4`
+- Sites playback SHA-256 `4018f9d40b1a2479db148ddbdbaecfde9b990ed038b4a399fb7b171d331fa31d`
+- Canonical local source: `swapped_watchmatch_30s.mp4`
+- Canonical source SHA-256 `5b2a18d147ac91be3a0f394ea45c93fa59dae69023a7d8e3a322f77bb23e6d17`
 
 The canonical generated artifact remains under the local `2_작품\output`
-tree. Copying it here is a local preview step, not a Git delivery step.
+tree. The smaller Sites playback copy is a deployment artifact and is also
+excluded from Git.

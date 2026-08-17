@@ -61,7 +61,7 @@ test("only the mapped Watchmode work exposes its local-only video", async () => 
   assert.match(source, /requestFullscreen/);
   assert.doesNotMatch(source, /\/demo\/watchmatch-demo\.mp4/);
   assert.match(catalog, /1901214/);
-  assert.match(catalog, /\/local-videos\/swapped_watchmatch_30s\.mp4/);
+  assert.match(catalog, /\/local-videos\/swapped_watchmatch_30s_sites\.mp4/);
   assert.match(gitignore, /\/public\/local-videos\/\*\.mp4/);
   const captions = await readFile(new URL("../public/local-videos/swapped_watchmatch_30s.ko.vtt", import.meta.url), "utf8");
   assert.match(captions, /^WEBVTT/u);
