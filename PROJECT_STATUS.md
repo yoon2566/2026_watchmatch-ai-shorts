@@ -8,8 +8,9 @@ Last updated: 2026-08-17
 - Working branch: `agent/movie-grok-batch`
 - Local project: `C:\Users\User\Desktop\채민\2_작품\shorts-webapp-sites`
 - Local URL: `http://localhost:3100`
-- The existing Sites project is being updated with the expanded video library;
-  no new site or address is being created.
+- Sites version 7 is live at
+  `https://watchmatch-ai-shorts.ochre-raven-7562.chatgpt.site`; the existing
+  project and address were updated rather than creating a new site.
 
 ## Active product decision
 
@@ -103,7 +104,9 @@ the Rings: The Return of the King, 28 Years Later, and Frankenstein. Each
 30-second master was
 converted to a fast-start 1080x1920 H.264/AAC playback copy and paired with an
 accurate Korean WebVTT track. Generated MP4 files remain excluded from Git but
-are included in the explicitly requested Sites deployment package.
+were included in the explicitly requested Sites deployment package. The public
+home returned HTTP 200, and all ten newly added playback URLs returned
+`video/mp4` with a valid MP4 `ftyp` signature after deployment.
 
 ## Swapped Grok CLI pilot
 

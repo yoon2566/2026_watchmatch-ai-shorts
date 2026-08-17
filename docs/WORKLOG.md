@@ -330,10 +330,12 @@ Copy this section for future material changes:
   WebVTT tracks, and update the existing Sites project rather than create a new
   address.
 - Status: implementation, media validation, lint, TypeScript, build, and
-  regression tests are complete. The existing Sites project is the deployment target.
+  regression tests passed. Sites version 7 was deployed successfully to the
+  existing public WatchMatch address.
 - Changed: added sixteen mappings, accessible caption tracks, a repeatable export
   script, hosted-player wording, and regression coverage.
-- Deployment scope: the existing private WatchMatch Sites project; no new site.
+- Deployment scope: the existing public WatchMatch Sites project; no new site.
+  The public home and all ten newly added MP4 URLs were verified after publish.
 
 ## 2026-08-17 - Resume the Grok movie batch after usage reset
 
