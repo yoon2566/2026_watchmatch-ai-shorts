@@ -18,3 +18,18 @@ media stays under `2_작품/output/movie_grok_batch` and is excluded from Git.
 
 Use `-MaximumScenes 1` for a paid preflight and omit it only after inspecting
 the first generated clip.
+
+Render and verify any work after its five Grok clips exist:
+
+```powershell
+& .\scripts\movie-grok-batch\Render-MovieWork.ps1 `
+  -RunDirectory 'C:\absolute\movie-batch\run-directory' `
+  -Slug 'work-slug'
+
+& .\scripts\movie-grok-batch\Verify-MovieBatch.ps1 `
+  -RunDirectory 'C:\absolute\movie-batch\run-directory'
+```
+
+If Grok returns a non-zero exit only after both media files were saved, the
+runner keeps those non-empty outputs and continues. A real quota, safety,
+permission, or ZDR failure with missing media still stops the batch.

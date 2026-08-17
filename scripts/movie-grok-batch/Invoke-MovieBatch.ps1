@@ -44,11 +44,16 @@ foreach ($work in @($manifest.works)) {
             -StdoutPath (Join-Path $workDirectory "logs\scene_${sceneNumber}.stdout.json") `
             -StderrPath (Join-Path $workDirectory "logs\scene_${sceneNumber}.stderr.log")
         if ($LASTEXITCODE -ne 0) {
-            throw "Grok stopped at $($work.slug) scene $sceneNumber with exit code $LASTEXITCODE"
+            $clipReady = (Test-Path -LiteralPath $clipPath -PathType Leaf) -and ((Get-Item -LiteralPath $clipPath).Length -gt 0)
+            $imageReady = (Test-Path -LiteralPath $imagePath -PathType Leaf) -and ((Get-Item -LiteralPath $imagePath).Length -gt 0)
+            if ($clipReady -and $imageReady) {
+                Write-Warning "Grok returned a non-zero exit after saving both media files for $($work.slug) scene $sceneNumber; preserving the completed outputs."
+            } else {
+                throw "Grok stopped at $($work.slug) scene $sceneNumber with exit code $LASTEXITCODE"
+            }
         }
         $generated += 1
     }
 }
 
 Write-Host "Movie batch generation completed. New scenes: $generated"
-
