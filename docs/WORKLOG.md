@@ -345,9 +345,10 @@ Copy this section for future material changes:
 - Changed: added `Continue-MovieBatch.ps1`, which skips completed masters,
   generates only missing image/clip pairs, renders locally, runs the batch
   verifier, and confirms the current work before moving forward.
-- Result: nine additional 30-second masters were completed in this continuation.
-  The final report records 16/20 completed works, 16 works with five source
-  clips, and `openRouterUsed: false`.
+- Result: ten additional 30-second masters were completed in the resumed
+  session, including nine advanced by the continuation runner after the
+  Shawshank preflight. The final report records 16/20 completed works, 16 works
+  with five source clips, and `openRouterUsed: false`.
 - Stop reason: `the-maze-runner` scene 1 returned HTTP 402 `Grok Build usage
   balance exhausted` before saving media. It was not retried or bypassed.
 - Local artifacts: generated media remains under

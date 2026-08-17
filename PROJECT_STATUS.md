@@ -77,13 +77,15 @@ site-mapping verification pass.
 
 The existing run at
 `C:\Users\User\Desktop\채민\2_작품\output\movie_grok_batch\run-20260817-144300`
-was resumed without regenerating completed work. Nine additional 30-second
-masters were completed and verified: `the-shawshank-redemption`, `fight-club`,
+was resumed without regenerating completed work. Ten additional 30-second
+masters were completed and verified in this resumed session:
+`the-shawshank-redemption`, `fight-club`,
 `28-years-later-bone-temple`, `war-machine`, `voice-message-arrived`, `wicked`,
 `anora`, `the-lord-of-the-rings-return-of-the-king`, and `28-years-later`, plus
-`frankenstein` before the next call was attempted. Together with the earlier
-six masters, the batch report now records 16 completed works and 16 works with
-five source clips.
+`frankenstein` before the next call was attempted. The continuation runner
+completed nine of those after the Shawshank preflight. Together with the
+earlier six masters, the batch report now records 16 completed works and 16
+works with five source clips.
 
 The next work, `the-maze-runner`, stopped before producing scene 1 because Grok
 Build returned HTTP 402 `usage balance exhausted`. The quota failure was not
