@@ -66,7 +66,7 @@ foreach ($slug in $works) {
         $lines.Add([string]($index + 1))
         $lines.Add("$(Convert-ToVttTimestamp $caption.startFrame) --> $(Convert-ToVttTimestamp $caption.endFrame)")
         $lines.Add([string]$caption.text)
-        $lines.Add('')
+        if ($index -lt ($captions.Count - 1)) { $lines.Add('') }
     }
     [System.IO.File]::WriteAllLines($outputCaptions, $lines, [System.Text.UTF8Encoding]::new($false))
 }
