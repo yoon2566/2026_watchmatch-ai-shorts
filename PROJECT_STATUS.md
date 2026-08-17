@@ -38,9 +38,10 @@ fiction, fantasy, horror, mystery, and animation.
   or JustWatch.
 - Watchmode availability may change. The UI instructs the user to confirm final
   availability in the selected OTT application.
-- Watchmode work ID `1901214` is connected to the local-only Swapped pilot.
-  The app confirms that the MP4 exists before enabling playback. Other works
-  show `쇼츠 준비 중` and never fall back to a common sample.
+- Seven Watchmode work IDs are connected to dedicated finished videos: the
+  Swapped pilot plus six completed Grok batch films. The app confirms each MP4
+  exists before enabling playback. Unmapped works show `쇼츠 준비 중` and never
+  fall back to a common sample.
 
 ## Verified live result
 
@@ -67,8 +68,18 @@ npm.cmd test
 
 ## Next step
 
-Add more verified `work ID -> local MP4` entries, then replace the static local
-mapping with a local project API when per-work generation is approved.
+Continue adding verified `work ID -> finished MP4` entries, then replace the
+static mapping with an artifact manifest when the weekly production cycle is
+approved.
+
+## Sites video library update
+
+The completed 2026-08-17 batch is mapped to its exact Watchmode IDs: Spider-Man:
+Homecoming, Spider-Man: Far from Home, Spider-Man: Into the Spider-Verse, Don't
+Say Good Luck, La Casa, and KPop Demon Hunters. Each 30-second master was
+converted to a fast-start 1080x1920 H.264/AAC playback copy and paired with an
+accurate Korean WebVTT track. Generated MP4 files remain excluded from Git but
+are included in the explicitly requested Sites deployment package.
 
 ## Swapped Grok CLI pilot
 

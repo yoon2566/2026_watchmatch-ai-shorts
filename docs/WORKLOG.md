@@ -320,3 +320,17 @@ Copy this section for future material changes:
 - Git scope: reproducible prompts, composition, render, verification, and
   documentation only. Generated images, video, audio, and logs remain local.
 - Deployment: not requested and not performed. No preview server was started.
+
+## 2026-08-17 - Connect the completed Grok batch to the hosted site
+
+- User request: make the already generated videos visible and playable in the
+  existing WatchMatch Sites application, like the earlier Swapped sample.
+- Decision: map the six exact Watchmode IDs to dedicated fast-start playback
+  copies, keep generated MP4 files out of Git, version the mappings and Korean
+  WebVTT tracks, and update the existing Sites project rather than create a new
+  address.
+- Status: implementation complete; build, media validation, push, and the
+  explicitly requested Sites deployment follow this entry.
+- Changed: added six mappings, accessible caption tracks, a repeatable export
+  script, hosted-player wording, and regression coverage.
+- Deployment scope: the existing private WatchMatch Sites project; no new site.

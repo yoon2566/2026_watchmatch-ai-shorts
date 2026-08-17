@@ -48,7 +48,7 @@ test("client implements OTT to media to genre live search without automatic work
   assert.doesNotMatch(source, /OPENROUTER|web_search|web_fetch|TMDB|JustWatch/iu);
 });
 
-test("only the mapped Watchmode work exposes its local-only video", async () => {
+test("mapped Watchmode works expose their finished Grok videos", async () => {
   const source = await readFile(new URL("../app/WatchMatchHosted.tsx", import.meta.url), "utf8");
   const catalog = await readFile(new URL("../lib/local-video-catalog.ts", import.meta.url), "utf8");
   const gitignore = await readFile(new URL("../.gitignore", import.meta.url), "utf8");
@@ -62,6 +62,14 @@ test("only the mapped Watchmode work exposes its local-only video", async () => 
   assert.doesNotMatch(source, /\/demo\/watchmatch-demo\.mp4/);
   assert.match(catalog, /1901214/);
   assert.match(catalog, /\/local-videos\/swapped_watchmatch_30s_sites\.mp4/);
+  for (const id of [1357316, 1357314, 1357317, 11014446, 1972561, 1893263]) {
+    assert.match(catalog, new RegExp(String(id)));
+  }
+  for (const slug of ["spider-man-homecoming", "spider-man-far-from-home", "spider-man-into-the-spider-verse", "dont-say-good-luck", "la-casa", "kpop-demon-hunters"]) {
+    assert.match(catalog, new RegExp(`/local-videos/${slug}_watchmatch_30s_sites\\.mp4`));
+  }
+  assert.match(source, /사이트에서 바로 재생하거나 내려받을 수 있습니다/);
+  assert.doesNotMatch(source, /이 PC에만 보관됩니다/);
   assert.match(gitignore, /\/public\/local-videos\/\*\.mp4/);
   const captions = await readFile(new URL("../public/local-videos/swapped_watchmatch_30s.ko.vtt", import.meta.url), "utf8");
   assert.match(captions, /^WEBVTT/u);

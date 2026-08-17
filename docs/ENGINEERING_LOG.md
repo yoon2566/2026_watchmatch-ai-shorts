@@ -98,6 +98,15 @@ npm.cmd test
 5. An existing Sites deployment can lag behind GitHub; pushing does not deploy.
 6. The active branch is pushed, but the existing Sites deployment remains unchanged until separately requested.
 
+## Hosted finished-video mapping
+
+The result player now resolves an exact Watchmode numeric work ID to a dedicated
+same-origin MP4 and Korean WebVTT track. It never substitutes a generic sample.
+Before enabling a card, the browser sends a same-origin `HEAD` request to the
+mapped media path. Generated masters remain in the local output tree; smaller
+fast-start playback derivatives are copied into the Sites build only for an
+explicit deployment and stay ignored by Git.
+
 ## Git workflow
 
 - Stable baseline: `main`
