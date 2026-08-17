@@ -9,7 +9,7 @@ Local mappings currently expected:
 - Watchmode work ID `1901214`
 - Sites playback copy: `swapped_watchmatch_30s_sites.mp4`
 - Sites playback SHA-256 `4018f9d40b1a2479db148ddbdbaecfde9b990ed038b4a399fb7b171d331fa31d`
-- Canonical local source: `swapped_watchmatch_30s.mp4`
+- Canonical local source: `2_작품\output\swapped_grok_pilot\run-20260817-125521\final\swapped_watchmatch_30s.mp4`
 - Canonical source SHA-256 `5b2a18d147ac91be3a0f394ea45c93fa59dae69023a7d8e3a322f77bb23e6d17`
 
 The 2026-08-17 batch adds six Sites playback copies. Their canonical sources
