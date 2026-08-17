@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useMemo, useRef, useState} from "react";
+import {getLocalVideo} from "@/lib/local-video-catalog";
 
 type Scene = "provider" | "media" | "genre" | "recommendations" | "production" | "result";
 type MediaType = "movie" | "tv";
@@ -74,7 +75,7 @@ function scoreText(score: number | null, suffix = ""): string {
   return score === null ? "정보 없음" : `${score}${suffix}`;
 }
 
-function RecommendationCard({item, index, selected, onSelect}: {item: Recommendation; index: number; selected: boolean; onSelect: () => void}) {
+function RecommendationCard({item, index, selected, hasVideo, onSelect}: {item: Recommendation; index: number; selected: boolean; hasVideo: boolean; onSelect: () => void}) {
   return (
     <article className={`recommendation-card ${selected ? "is-selected" : ""}`}>
       <button type="button" className="recommendation-select" role="radio" aria-label={`${item.title} 선택`} aria-checked={selected} onClick={onSelect}>
@@ -82,7 +83,7 @@ function RecommendationCard({item, index, selected, onSelect}: {item: Recommenda
         <span className="selection-mark" aria-hidden="true">{selected ? "✓" : "+"}</span>
       </button>
       <div className="card-meta">
-        <span>{item.year ?? "연도 미상"}</span><span>{item.type === "movie" ? "영화" : "TV 시리즈"}</span><span className="safe-badge">한국 OTT 검색</span>
+        <span>{item.year ?? "연도 미상"}</span><span>{item.type === "movie" ? "영화" : "TV 시리즈"}</span><span className="safe-badge">한국 OTT 검색</span><span className={hasVideo ? "video-ready-badge" : "video-pending-badge"}>{hasVideo ? "쇼츠 제작 완료" : "쇼츠 준비 중"}</span>
       </div>
       <h3>{item.title}</h3>
       <div className="watchmode-score-grid" aria-label="Watchmode 작품 평가 정보">
@@ -108,6 +109,7 @@ export default function WatchMatchHosted() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [meta, setMeta] = useState<RecommendationMeta | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [availableVideoIds, setAvailableVideoIds] = useState<number[]>([]);
   const [progress, setProgress] = useState(0);
   const [productionRun, setProductionRun] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -116,6 +118,10 @@ export default function WatchMatchHosted() {
   const providers = options?.providers ?? FALLBACK_PROVIDERS;
   const genres = options?.genres ?? FALLBACK_GENRES;
   const selected = useMemo(() => recommendations.find((item) => item.id === selectedId) ?? null, [recommendations, selectedId]);
+  const selectedVideo = useMemo(() => {
+    if (!selected || !availableVideoIds.includes(selected.id)) return null;
+    return getLocalVideo(selected.id);
+  }, [availableVideoIds, selected]);
 
   useEffect(() => { screenTitleRef.current?.focus(); }, [scene]);
 
@@ -146,18 +152,37 @@ export default function WatchMatchHosted() {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  useEffect(() => {
+    const mapped = recommendations
+      .map((item) => ({id: item.id, config: getLocalVideo(item.id)}))
+      .filter((item): item is {id: number; config: NonNullable<ReturnType<typeof getLocalVideo>>} => item.config !== null);
+    if (mapped.length === 0) return;
+    const controller = new AbortController();
+    void Promise.all(mapped.map(async ({id, config}) => {
+      try {
+        const response = await fetch(config.src, {method: "HEAD", cache: "no-store", signal: controller.signal});
+        return response.ok ? id : null;
+      } catch {
+        return null;
+      }
+    })).then((ids) => {
+      if (!controller.signal.aborted) setAvailableVideoIds(ids.filter((id): id is number => id !== null));
+    });
+    return () => controller.abort();
+  }, [recommendations]);
+
   const reset = () => {
     abortRef.current?.abort();
     setScene("provider"); setProvider(null); setMediaType(null); setGenre(null); setRecommendations([]); setMeta(null);
-    setSelectedId(null); setSearchError(""); setSearching(false); setProgress(0);
+    setSelectedId(null); setAvailableVideoIds([]); setSearchError(""); setSearching(false); setProgress(0);
   };
 
   const chooseProvider = (value: ProviderKey) => {
-    setProvider(value); setMediaType(null); setGenre(null); setRecommendations([]); setSelectedId(null); setSearchError(""); setScene("media");
+    setProvider(value); setMediaType(null); setGenre(null); setRecommendations([]); setSelectedId(null); setAvailableVideoIds([]); setSearchError(""); setScene("media");
   };
 
   const chooseMedia = (value: MediaType) => {
-    setMediaType(value); setGenre(null); setRecommendations([]); setSelectedId(null); setSearchError(""); setScene("genre");
+    setMediaType(value); setGenre(null); setRecommendations([]); setSelectedId(null); setAvailableVideoIds([]); setSearchError(""); setScene("genre");
   };
 
   const findRecommendations = async (value: GenreKey) => {
@@ -165,7 +190,7 @@ export default function WatchMatchHosted() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setGenre(value); setScene("recommendations"); setSearching(true); setSearchError(""); setRecommendations([]); setMeta(null); setSelectedId(null);
+    setGenre(value); setScene("recommendations"); setSearching(true); setSearchError(""); setRecommendations([]); setMeta(null); setSelectedId(null); setAvailableVideoIds([]);
     try {
       const response = await fetch("/api/recommendations", {
         method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({provider, mediaType, genre: value}), signal: controller.signal,
@@ -184,7 +209,7 @@ export default function WatchMatchHosted() {
   };
 
   const startProduction = () => {
-    if (!selected) return;
+    if (!selected || !selectedVideo) return;
     setProgress(0); setProductionRun((run) => run + 1); setScene("production");
   };
 
@@ -237,13 +262,13 @@ export default function WatchMatchHosted() {
           {searching ? <div className="recommendation-grid" aria-live="polite">{[0, 1, 2].map((item) => <div key={item} className="recommendation-card skeleton-card"><span className="skeleton-line skeleton-meta" /><span className="skeleton-line skeleton-title" /><span className="skeleton-block" /></div>)}</div>
             : searchError ? <div className="empty-recommendations" role="alert"><span aria-hidden="true">!</span><div><strong>실제 검색에 실패했습니다.</strong><p>{searchError}</p></div>{genre ? <button type="button" className="secondary-button" onClick={() => void findRecommendations(genre)}>다시 검색</button> : null}</div>
             : recommendations.length === 0 ? <div className="empty-recommendations"><span aria-hidden="true">i</span><div><strong>조건에 맞는 작품이 없습니다.</strong><p>다른 장르나 OTT를 선택해 주세요.</p></div></div>
-            : <><div className="recommendation-toolbar"><p>전체 후보 {meta?.totalResults ?? recommendations.length}편 중 상위 {recommendations.length}편 · {meta?.ratingFilterRelaxed ? "평점 하한 완화" : "평점 6.5 이상"}</p></div><div className="recommendation-grid" role="radiogroup" aria-label="실제 추천 작품">{recommendations.map((item, index) => <RecommendationCard key={item.id} item={item} index={index} selected={item.id === selectedId} onSelect={() => setSelectedId(item.id)} />)}</div></>}
-          <div className="create-bar"><div><p>선택한 작품</p><strong>{selected?.title ?? "작품을 하나 골라주세요"}</strong></div><button type="button" className="primary-button" onClick={startProduction} disabled={!selected}>30초 쇼츠 체험 <span aria-hidden="true">▶</span></button></div>
+            : <><div className="recommendation-toolbar"><p>전체 후보 {meta?.totalResults ?? recommendations.length}편 중 상위 {recommendations.length}편 · {meta?.ratingFilterRelaxed ? "평점 하한 완화" : "평점 6.5 이상"}</p></div><div className="recommendation-grid" role="radiogroup" aria-label="실제 추천 작품">{recommendations.map((item, index) => <RecommendationCard key={item.id} item={item} index={index} selected={item.id === selectedId} hasVideo={availableVideoIds.includes(item.id)} onSelect={() => setSelectedId(item.id)} />)}</div></>}
+          <div className="create-bar"><div><p>{selectedVideo ? "로컬 쇼츠 제작 완료" : selected ? "선택한 작품 · 쇼츠 준비 중" : "선택한 작품"}</p><strong>{selected?.title ?? "작품을 하나 골라주세요"}</strong></div><button type="button" className="primary-button" onClick={startProduction} disabled={!selectedVideo}>{selectedVideo ? "제작된 쇼츠 보기" : "쇼츠 준비 중"} <span aria-hidden="true">▶</span></button></div>
         </section> : null}
 
-        {scene === "production" ? <section className="project-section flow-screen production-screen" aria-labelledby="production-title"><section className="pipeline-panel"><div className="pipeline-heading"><div><p className="eyebrow">05 · 영상 제작 중</p><h1 id="production-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title}</h1></div><span className="render-id">VIDEO DEMO</span></div><div className="active-job"><div className="job-orbit" aria-hidden="true"><span /></div><div><p aria-live="polite">{PIPELINE_STEPS[activePipelineIndex]}</p><span>현재는 검증된 기술 샘플을 준비합니다.</span></div><strong>{progress}%</strong></div><div className="progress-track" role="progressbar" aria-label="쇼츠 준비 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{width: `${progress}%`}} /></div><ol className="pipeline-steps">{PIPELINE_STEPS.map((label, index) => <li key={label} className={`${index < activePipelineIndex ? "is-complete" : ""} ${index === activePipelineIndex ? "is-active" : ""}`}><span className="step-marker" aria-hidden="true">{index < activePipelineIndex ? "✓" : String(index + 1).padStart(2, "0")}</span><span>{label}</span></li>)}</ol></section><button type="button" className="text-button cancel-button" onClick={() => setScene("recommendations")}>체험 중단</button></section> : null}
+        {scene === "production" ? <section className="project-section flow-screen production-screen" aria-labelledby="production-title"><section className="pipeline-panel"><div className="pipeline-heading"><div><p className="eyebrow">05 · 영상 준비 중</p><h1 id="production-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title}</h1></div><span className="render-id">LOCAL VIDEO</span></div><div className="active-job"><div className="job-orbit" aria-hidden="true"><span /></div><div><p aria-live="polite">{PIPELINE_STEPS[activePipelineIndex]}</p><span>선택한 작품에 연결된 로컬 제작 영상을 준비합니다.</span></div><strong>{progress}%</strong></div><div className="progress-track" role="progressbar" aria-label="쇼츠 준비 진행률" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{width: `${progress}%`}} /></div><ol className="pipeline-steps">{PIPELINE_STEPS.map((label, index) => <li key={label} className={`${index < activePipelineIndex ? "is-complete" : ""} ${index === activePipelineIndex ? "is-active" : ""}`}><span className="step-marker" aria-hidden="true">{index < activePipelineIndex ? "✓" : String(index + 1).padStart(2, "0")}</span><span>{label}</span></li>)}</ol></section><button type="button" className="text-button cancel-button" onClick={() => setScene("recommendations")}>영상 준비 중단</button></section> : null}
 
-        {scene === "result" ? <section className="project-section flow-screen result-screen" aria-labelledby="result-title"><section className="result-panel"><div className="result-copy"><p className="step-kicker">06 · 영상 보기</p><h1 id="result-title" ref={screenTitleRef} tabIndex={-1}>30초 쇼츠 제작 흐름을 확인하세요.</h1><p>추천 검색은 실제 Watchmode 데이터이며, 영상은 아직 모든 작품에 공통으로 제공되는 기술 샘플입니다.</p><div className="result-facts"><div><span>선택 작품</span><strong>{selected?.title}</strong></div><div><span>검색 OTT</span><strong>{providerLabel}</strong></div><div><span>샘플 검증</span><strong>H.264 · AAC</strong></div></div><div className="result-actions"><a className="primary-button download-button" href="/demo/watchmatch-demo.mp4" download>샘플 MP4 다운로드 <span aria-hidden="true">↓</span></a><button type="button" className="secondary-button" onClick={startProduction}>다시 체험하기</button><button type="button" className="text-button" onClick={reset}>처음부터 추천받기</button></div></div><div className="phone-frame"><div className="phone-top" aria-hidden="true"><span /></div><div className="video-shell"><video src="/demo/watchmatch-demo.mp4" controls playsInline preload="metadata" aria-label="WatchMatch 기술 샘플"><track kind="captions" src="/demo/watchmatch-demo-ko.vtt" srcLang="ko" label="한국어" />브라우저에서 영상을 재생할 수 없습니다.</video><span className="video-label">AI 생성 · 기술 샘플</span></div></div></section></section> : null}
+        {scene === "result" && selectedVideo ? <section className="project-section flow-screen result-screen" aria-labelledby="result-title"><section className="result-panel"><div className="result-copy"><p className="step-kicker">06 · 영상 보기</p><h1 id="result-title" ref={screenTitleRef} tabIndex={-1}>{selected?.title} 쇼츠를 확인하세요.</h1><p>Watchmode의 실제 검색 결과에서 선택한 작품 ID와 로컬에서 제작한 전용 MP4를 연결했습니다. 영상 파일은 GitHub가 아니라 이 PC에만 보관됩니다.</p><div className="result-facts"><div><span>선택 작품</span><strong>{selected?.title}</strong></div><div><span>검색 OTT</span><strong>{providerLabel}</strong></div><div><span>영상 검증</span><strong>1080×1920 · H.264/AAC</strong></div></div><div className="result-actions"><a className="primary-button download-button" href={selectedVideo.src} download>로컬 MP4 다운로드 <span aria-hidden="true">↓</span></a><button type="button" className="secondary-button" onClick={startProduction}>다시 보기</button><button type="button" className="text-button" onClick={reset}>처음부터 추천받기</button></div></div><div className="phone-frame"><div className="phone-top" aria-hidden="true"><span /></div><div className="video-shell"><video src={selectedVideo.src} controls playsInline preload="metadata" aria-label={`${selected?.title} WatchMatch 쇼츠`}><track kind="captions" src={selectedVideo.captionsSrc} srcLang="ko" label="한국어" default />브라우저에서 영상을 재생할 수 없습니다.</video><span className="video-label">AI 생성 · {selectedVideo.label}</span></div></div></section></section> : null}
       </main>
       <footer className="site-footer"><div className="footer-brand"><BrandMark small /><strong>WatchMatch</strong></div><p>대한민국 OTT 작품 정보는 Watchmode 검색 결과를 사용합니다. 실제 제공 여부는 각 OTT 서비스에서 확인해 주세요.</p><span>Data provided by Watchmode</span></footer>
     </div>

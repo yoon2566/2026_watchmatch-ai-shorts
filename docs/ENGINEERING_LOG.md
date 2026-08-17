@@ -27,6 +27,7 @@ The local full project and original media folders are not synchronized by this r
 | Manual Netflix catalog | Replaced live search with a human-verified Netflix KR catalog and 14-day availability records. | Phase one was verified, but the zero-approved-entry experience was too burdensome and is now superseded. |
 | Three-click general catalog | Replaced OTT verification with movie/TV, one genre, and era choices backed by a 90-work offline catalog. | All 60 combinations contain at least six works; 11/11 tests, lint, TypeScript, Vinext build, Wikidata verification, and local home/API smoke checks passed on `agent/simple-three-step-recommendations`. |
 | Watchmode live search | Replaced the offline recommendation route with the separately proven Watchmode KR subscription search. | Six providers and ten genres enabled; live Netflix/movie/action returned three real titles; server-only key, build, lint, TypeScript, and 6/6 tests passed on `agent/watchmode-live-search`. |
+| Local work-video binding | Bound Watchmode ID `1901214` to the local-only Swapped MP4 and removed the common-video fallback. | The client checks the same-origin file with `HEAD`; only an existing mapped video can advance to playback, while generated MP4s remain Git-ignored. |
 
 ## Target architecture under active implementation
 

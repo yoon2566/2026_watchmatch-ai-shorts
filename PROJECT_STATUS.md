@@ -1,11 +1,11 @@
 # WatchMatch project status
 
-Last updated: 2026-08-16
+Last updated: 2026-08-17
 
 ## Repository and delivery
 
 - GitHub: `https://github.com/yoon2566/2026_watchmatch-ai-shorts`
-- Working branch: `agent/watchmode-live-search`
+- Working branch: `agent/swapped-grok-pilot`
 - Local project: `C:\Users\User\Desktop\채민\2_작품\shorts-webapp-sites`
 - Local URL: `http://localhost:3100`
 - Sites deployment is unchanged; this work is local and GitHub-only.
@@ -38,8 +38,9 @@ fiction, fantasy, horror, mystery, and animation.
   or JustWatch.
 - Watchmode availability may change. The UI instructs the user to confirm final
   availability in the selected OTT application.
-- The current video result remains a common technical sample. The separate
-  Howl Grok CLI pilot is not yet generated per selected work.
+- Watchmode work ID `1901214` is connected to the local-only Swapped pilot.
+  The app confirms that the MP4 exists before enabling playback. Other works
+  show `쇼츠 준비 중` and never fall back to a common sample.
 
 ## Verified live result
 
@@ -66,9 +67,8 @@ npm.cmd test
 
 ## Next step
 
-Replace the common hosted video sample with a local project API that sends only
-the selected Watchmode work ID to a canonical resolver, then runs the approved
-Grok CLI, Heami, Remotion, and FFmpeg pipeline.
+Add more verified `work ID -> local MP4` entries, then replace the static local
+mapping with a local project API when per-work generation is approved.
 
 ## Swapped Grok CLI pilot
 
@@ -77,5 +77,10 @@ A second standalone golden sample was completed for `뒤바뀐 친구들의 신�
 local Heami narration, synthetic effects, Remotion, and FFmpeg. The finished
 MP4 is 1080x1920, 30 fps, 900 frames, 30.037 seconds, H.264/AAC, fully
 decodable, and SHA-256 verified. The run used no OpenRouter service or key and
-did not start a preview server. Generated media remains local and is not part
-of Git history.
+did not start a standalone preview server. Generated media remains local and
+is not part of Git history.
+
+The WatchMatch local app now maps this pilot to Watchmode ID `1901214`. A live
+`Netflix + movie + animation` request returned the title as one of three
+recommendations. The same-origin MP4 endpoint returned HTTP 200 for `HEAD` and
+HTTP 206 for a byte-range request, while Git ignores the 36,082,137-byte file.

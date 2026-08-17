@@ -1556,6 +1556,16 @@ main {
   background: rgba(255, 207, 112, 0.06);
 }
 
+.card-meta .video-ready-badge {
+  border-color: rgba(159, 108, 255, 0.3);
+  color: #d7bfff;
+  background: rgba(159, 108, 255, 0.12);
+}
+
+.card-meta .video-pending-badge {
+  color: rgba(255, 255, 255, 0.46);
+}
+
 .recommendation-card h3 {
   margin-top: 18px;
   font-size: clamp(1.5rem, 3vw, 2.1rem);

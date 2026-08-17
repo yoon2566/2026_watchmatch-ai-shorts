@@ -214,6 +214,23 @@ Copy this section for future material changes:
 - Known limits and next task:
 ```
 
+## 2026-08-17 - Connect the Swapped search result to its local-only short
+
+- User request: keep the generated MP4 out of Git, but let the local app search
+  Watchmode and play that video when the matching result is selected.
+- Decision: map Watchmode work ID `1901214` to a same-origin local MP4, verify
+  its presence with `HEAD`, enable playback only when the file exists, and show
+  `쇼츠 준비 중` for every unmapped result instead of playing a common sample.
+- Status: implemented and verified locally; commit and push recorded at handoff.
+- Verification: lint and TypeScript pass; Vinext build and 6/6 tests pass;
+  `localhost:3100` returns HTTP 200; the live Netflix/movie/animation query
+  includes ID `1901214`; the MP4 returns HTTP 200 to `HEAD` and HTTP 206 to a
+  byte-range request with the expected 36,082,137-byte length.
+- Branch: `agent/swapped-grok-pilot`.
+- Git scope: source, mapping, captions, tests, and documentation only. The MP4
+  is explicitly ignored and remains on this PC.
+- Deployment: not requested and not performed.
+
 ## 2026-08-16 - Consolidate WatchMatch conversation artifacts under 2_작품
 
 - User request: move all WatchMatch work produced in this conversation into a

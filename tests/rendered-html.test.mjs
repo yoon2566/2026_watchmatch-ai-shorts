@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {readFile, stat} from "node:fs/promises";
+import {readFile} from "node:fs/promises";
 import test from "node:test";
 
 async function render(pathname = "/", init) {
@@ -43,18 +43,24 @@ test("client implements OTT to media to genre live search without automatic work
   assert.match(source, /useState<Scene>\("provider"\)/);
   assert.match(source, /fetch\("\/api\/options"/);
   assert.match(source, /JSON\.stringify\(\{provider, mediaType, genre: value\}\)/);
-  assert.match(source, /disabled=\{!selected\}/);
+  assert.match(source, /disabled=\{!selectedVideo\}/);
   assert.doesNotMatch(source, /setSelectedId\([^\n]*recommendations\[0\]/);
   assert.doesNotMatch(source, /OPENROUTER|web_search|web_fetch|TMDB|JustWatch/iu);
 });
 
-test("video-result demo remains wired to playable local assets", async () => {
+test("only the mapped Watchmode work exposes its local-only video", async () => {
   const source = await readFile(new URL("../app/WatchMatchHosted.tsx", import.meta.url), "utf8");
+  const catalog = await readFile(new URL("../lib/local-video-catalog.ts", import.meta.url), "utf8");
+  const gitignore = await readFile(new URL("../.gitignore", import.meta.url), "utf8");
   assert.match(source, /PIPELINE_STEPS/);
-  assert.match(source, /\/demo\/watchmatch-demo\.mp4/);
-  assert.match(source, /\/demo\/watchmatch-demo-ko\.vtt/);
-  const video = await stat(new URL("../public/demo/watchmatch-demo.mp4", import.meta.url));
-  const captions = await readFile(new URL("../public/demo/watchmatch-demo-ko.vtt", import.meta.url), "utf8");
-  assert.ok(video.size > 0);
+  assert.match(source, /method: "HEAD"/);
+  assert.match(source, /disabled=\{!selectedVideo\}/);
+  assert.match(source, /쇼츠 제작 완료/);
+  assert.match(source, /쇼츠 준비 중/);
+  assert.doesNotMatch(source, /\/demo\/watchmatch-demo\.mp4/);
+  assert.match(catalog, /1901214/);
+  assert.match(catalog, /\/local-videos\/swapped_watchmatch_30s\.mp4/);
+  assert.match(gitignore, /\/public\/local-videos\/\*\.mp4/);
+  const captions = await readFile(new URL("../public/local-videos/swapped_watchmatch_30s.ko.vtt", import.meta.url), "utf8");
   assert.match(captions, /^WEBVTT/u);
 });

@@ -40,3 +40,7 @@ yarn-error.log*
 /outputs/
 /work/
 *.tsbuildinfo
+
+# Local-only generated video library. Keep the small manifest/caption files in
+# Git, but never commit generated MP4s.
+/public/local-videos/*.mp4
