@@ -325,13 +325,13 @@ Copy this section for future material changes:
 
 - User request: make the already generated videos visible and playable in the
   existing WatchMatch Sites application, like the earlier Swapped sample.
-- Decision: map the six exact Watchmode IDs to dedicated fast-start playback
+- Decision: map all sixteen completed batch Watchmode IDs to dedicated fast-start playback
   copies, keep generated MP4 files out of Git, version the mappings and Korean
   WebVTT tracks, and update the existing Sites project rather than create a new
   address.
-- Status: implementation complete; build, media validation, push, and the
-  explicitly requested Sites deployment follow this entry.
-- Changed: added six mappings, accessible caption tracks, a repeatable export
+- Status: implementation, media validation, lint, TypeScript, build, and
+  regression tests are complete. The existing Sites project is the deployment target.
+- Changed: added sixteen mappings, accessible caption tracks, a repeatable export
   script, hosted-player wording, and regression coverage.
 - Deployment scope: the existing private WatchMatch Sites project; no new site.
 

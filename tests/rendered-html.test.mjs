@@ -62,10 +62,10 @@ test("mapped Watchmode works expose their finished Grok videos", async () => {
   assert.doesNotMatch(source, /\/demo\/watchmatch-demo\.mp4/);
   assert.match(catalog, /1901214/);
   assert.match(catalog, /\/local-videos\/swapped_watchmatch_30s_sites\.mp4/);
-  for (const id of [1357316, 1357314, 1357317, 11014446, 1972561, 1893263]) {
+  for (const id of [1357316, 1357314, 1357317, 11014446, 1972561, 1893263, 1418767, 1132806, 1810796, 1805677, 1583724, 1468618, 1824277, 1404363, 1780773, 1700166]) {
     assert.match(catalog, new RegExp(String(id)));
   }
-  for (const slug of ["spider-man-homecoming", "spider-man-far-from-home", "spider-man-into-the-spider-verse", "dont-say-good-luck", "la-casa", "kpop-demon-hunters"]) {
+  for (const slug of ["spider-man-homecoming", "spider-man-far-from-home", "spider-man-into-the-spider-verse", "dont-say-good-luck", "la-casa", "kpop-demon-hunters", "the-shawshank-redemption", "fight-club", "28-years-later-bone-temple", "war-machine", "voice-message-arrived", "wicked", "anora", "the-lord-of-the-rings-return-of-the-king", "28-years-later", "frankenstein"]) {
     assert.match(catalog, new RegExp(`/local-videos/${slug}_watchmatch_30s_sites\\.mp4`));
   }
   assert.match(source, /사이트에서 바로 재생하거나 내려받을 수 있습니다/);

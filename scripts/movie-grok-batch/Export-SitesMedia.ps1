@@ -13,7 +13,17 @@ $works = @(
     'spider-man-into-the-spider-verse',
     'dont-say-good-luck',
     'la-casa',
-    'kpop-demon-hunters'
+    'kpop-demon-hunters',
+    'the-shawshank-redemption',
+    'fight-club',
+    '28-years-later-bone-temple',
+    'war-machine',
+    'voice-message-arrived',
+    'wicked',
+    'anora',
+    'the-lord-of-the-rings-return-of-the-king',
+    '28-years-later',
+    'frankenstein'
 )
 
 if (-not (Test-Path -LiteralPath $FfmpegPath -PathType Leaf)) {

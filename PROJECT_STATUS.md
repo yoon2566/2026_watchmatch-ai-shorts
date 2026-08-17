@@ -8,7 +8,8 @@ Last updated: 2026-08-17
 - Working branch: `agent/movie-grok-batch`
 - Local project: `C:\Users\User\Desktop\채민\2_작품\shorts-webapp-sites`
 - Local URL: `http://localhost:3100`
-- Sites deployment is unchanged; this work is local and GitHub-only.
+- The existing Sites project is being updated with the expanded video library;
+  no new site or address is being created.
 
 ## Active product decision
 
@@ -38,8 +39,8 @@ fiction, fantasy, horror, mystery, and animation.
   or JustWatch.
 - Watchmode availability may change. The UI instructs the user to confirm final
   availability in the selected OTT application.
-- Seven Watchmode work IDs are connected to dedicated finished videos: the
-  Swapped pilot plus six completed Grok batch films. The app confirms each MP4
+- Seventeen Watchmode work IDs are connected to dedicated finished videos: the
+  Swapped pilot plus sixteen completed Grok batch films. The app confirms each MP4
   exists before enabling playback. Unmapped works show `쇼츠 준비 중` and never
   fall back to a common sample.
 
@@ -95,9 +96,11 @@ remain outside Git.
 
 ## Sites video library update
 
-The completed 2026-08-17 batch is mapped to its exact Watchmode IDs: Spider-Man:
-Homecoming, Spider-Man: Far from Home, Spider-Man: Into the Spider-Verse, Don't
-Say Good Luck, La Casa, and KPop Demon Hunters. Each 30-second master was
+The completed 2026-08-17 batch is mapped to its exact Watchmode IDs. It includes
+the original six mappings plus Shawshank Redemption, Fight Club, 28 Years Later:
+The Bone Temple, War Machine, Voice Message Arrived, Wicked, Anora, The Lord of
+the Rings: The Return of the King, 28 Years Later, and Frankenstein. Each
+30-second master was
 converted to a fast-start 1080x1920 H.264/AAC playback copy and paired with an
 accurate Korean WebVTT track. Generated MP4 files remain excluded from Git but
 are included in the explicitly requested Sites deployment package.
