@@ -1,0 +1,9 @@
+Load the bundled imagine skill and execute the requested media generation now. Do not use web search or web fetch. Create an entirely original family-adventure asset and do not copy any film frame, poster, logo, named character, species design, or recognizable location.
+
+Call image_edit exactly once using this canonical reference image: __RUN__\images\scene_01_swap_source.jpg
+
+Preserve the exact two original creature designs and the same stylized 3D rendering. Create a vertical action shot at a rushing forest stream: the ivory-and-cobalt bird body braces its wings as a bridge while the small russet forest-creature body reaches from a rock to pull it toward safety. The moment is cooperative and suspenseful but family-friendly, with no injury or predator. Rain droplets, bright teal water, warm light breaking through clouds, no text.
+
+Then call image_to_video exactly once using that edited image, prompt: "The stream rushes below, the small forest-creature body pulls firmly while the large bird body folds one wing and steps onto the rock, and both regain balance together. Use one restrained orbiting push-in and keep character geometry stable.", duration 6, resolution_name "720p".
+
+After both tools succeed, use run_terminal_cmd only to copy the edited source image to __RUN__\images\scene_04_teamwork_source.jpg and the generated video to __RUN__\clips\scene_04_teamwork_grok.mp4. Verify both files exist and are non-empty. Return concise JSON with paths and tool parameters. Do not retry a safety, quota, permission, or Zero Data Retention error.

@@ -1,0 +1,9 @@
+Load the bundled imagine skill and execute the requested media generation now. Do not use web search or web fetch. Create an entirely original family-adventure asset and do not copy any film frame, poster, logo, named character, species design, or recognizable location.
+
+Call image_edit exactly once using this canonical reference image: __RUN__\images\scene_01_swap_source.jpg
+
+Preserve the exact two original creature designs and the same high-end stylized 3D rendering. Create a new vertical shot above a vast green forest canopy: the ivory-and-cobalt bird body is airborne but flying awkwardly with uneven wings, while the small russet forest-creature body clings safely to a broad branch below and looks upward in disbelief. The body-swap situation is conveyed only through their surprised body language; keep it playful, family-friendly, and easy to animate. Cinematic morning light, no text.
+
+Then call image_to_video exactly once using that edited image, prompt: "The large bird body flaps twice in an awkward zigzag and barely steadies itself while the small forest-creature body on the branch waves both arms in alarm; the camera follows upward with one smooth tilt. Keep the original designs stable and motion restrained.", duration 6, resolution_name "720p".
+
+After both tools succeed, use run_terminal_cmd only to copy the edited source image to __RUN__\images\scene_02_flight_source.jpg and the generated video to __RUN__\clips\scene_02_flight_grok.mp4. Verify both files exist and are non-empty. Return concise JSON with paths and tool parameters. Do not retry a safety, quota, permission, or Zero Data Retention error.

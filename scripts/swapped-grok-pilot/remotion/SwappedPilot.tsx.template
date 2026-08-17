@@ -1,0 +1,104 @@
+import React from "react";
+import {Audio, Video} from "@remotion/media";
+import {AbsoluteFill, Easing, Sequence, interpolate, staticFile, useCurrentFrame} from "remotion";
+
+type SceneSpec = {from: number; duration: number; src: string; emphasis: string; accent: string};
+type Cue = {text: string; startFrame: number; endFrame: number; src: string};
+
+const SCENES: SceneSpec[] = [
+  {from: 0, duration: 162, src: "clips/scene-01.mp4", emphasis: "몸이 뒤바뀌었다", accent: "#7dd3fc"},
+  {from: 162, duration: 162, src: "clips/scene-02.mp4", emphasis: "갑자기 날게 됐다", accent: "#fbbf24"},
+  {from: 324, duration: 162, src: "clips/scene-03.mp4", emphasis: "완전히 다른 눈높이", accent: "#86efac"},
+  {from: 486, duration: 162, src: "clips/scene-04.mp4", emphasis: "둘이 힘을 합친다면", accent: "#67e8f9"},
+  {from: 648, duration: 186, src: "clips/scene-05.mp4", emphasis: "다시 돌아갈 수 있을까?", accent: "#fde68a"},
+];
+
+const CUES: Cue[] = [
+  {text: "가장 싫어하던 상대의 몸으로 눈을 뜬다면?", startFrame: 8, endFrame: 85, src: "audio/sentence-01.wav"},
+  {text: "작은 숲 생물과 큰 새의 몸이 한순간에 뒤바뀝니다.", startFrame: 89, endFrame: 184, src: "audio/sentence-02.wav"},
+  {text: "날 수 없던 존재는 하늘로 떠오르고,", startFrame: 188, endFrame: 257, src: "audio/sentence-03.wav"},
+  {text: "하늘의 주인은 첫걸음부터 흔들리죠.", startFrame: 261, endFrame: 332, src: "audio/sentence-04.wav"},
+  {text: "서로를 이해할 생각은 없었지만,", startFrame: 336, endFrame: 401, src: "audio/sentence-05.wav"},
+  {text: "돌아가려면 둘이 힘을 합쳐야 합니다.", startFrame: 405, endFrame: 470, src: "audio/sentence-06.wav"},
+  {text: "거대한 숲은 전혀 다른 눈높이의 낯선 세계가 되고,", startFrame: 474, endFrame: 568, src: "audio/sentence-07.wav"},
+  {text: "티격태격하던 두 친구는 한 선택 앞에 멈춥니다.", startFrame: 572, endFrame: 665, src: "audio/sentence-08.wav"},
+  {text: "과연 다시 제자리로 돌아갈 수 있을까요?", startFrame: 669, endFrame: 744, src: "audio/sentence-09.wav"},
+  {text: "뒤바뀐 친구들의 신비한 모험.", startFrame: 837, endFrame: 900, src: "audio/sentence-10.wav"},
+];
+
+const SceneVideo: React.FC<{scene: SceneSpec}> = ({scene}) => {
+  const frame = useCurrentFrame();
+  const cutLength = scene.duration / 3;
+  const cutIndex = Math.min(2, Math.floor(frame / cutLength));
+  const cutStart = Math.floor(cutIndex * cutLength);
+  const cutEnd = Math.max(cutStart + 1, Math.ceil((cutIndex + 1) * cutLength) - 1);
+  const opacity = interpolate(frame, [0, 5, scene.duration - 5, scene.duration], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
+  return (
+    <AbsoluteFill style={{backgroundColor: "#02070b", opacity, overflow: "hidden"}}>
+      <Video
+        src={staticFile(scene.src)}
+        muted
+        objectFit="cover"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectPosition: ["50% 50%", "45% 43%", "56% 52%"][cutIndex],
+          scale: interpolate(frame, [cutStart, cutEnd], [[1.02, 1.16, 1.08][cutIndex], [1.1, 1.24, 1.17][cutIndex]], {extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.quad)}),
+          filter: "saturate(.96) contrast(1.06) brightness(.8)",
+        }}
+      />
+      <AbsoluteFill style={{background: "linear-gradient(180deg,rgba(1,8,12,.62) 0%,rgba(1,8,12,.05) 36%,rgba(1,8,12,.12) 63%,rgba(1,8,12,.84) 100%)"}} />
+      <div style={{position: "absolute", left: 70, right: 70, top: 760, color: "#fff", fontFamily: "Arial, 'Malgun Gothic', sans-serif", fontWeight: 900, fontSize: 92, lineHeight: 1.08, letterSpacing: -5, textAlign: "center", textShadow: "0 6px 28px rgba(0,0,0,.95),0 0 36px rgba(0,0,0,.8)"}}>
+        <span style={{color: scene.accent}}>{scene.emphasis}</span>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const NarrationCaption: React.FC = () => {
+  const frame = useCurrentFrame();
+  const cue = CUES.find((item) => frame >= item.startFrame && frame < item.endFrame);
+  if (!cue) return null;
+  const localFrame = frame - cue.startFrame;
+  const duration = cue.endFrame - cue.startFrame;
+  return (
+    <div style={{position: "absolute", top: 185, left: 80, right: 80, opacity: interpolate(localFrame, [0, 4, Math.max(5, duration - 5), duration], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"}), padding: "22px 30px 25px", borderRadius: 28, background: "rgba(2,10,14,.68)", border: "1px solid rgba(125,211,252,.35)", color: "white", fontFamily: "Arial, 'Malgun Gothic', sans-serif", fontWeight: 900, fontSize: 60, lineHeight: 1.22, letterSpacing: -3, textAlign: "center", textWrap: "balance", textShadow: "0 4px 18px rgba(0,0,0,.95)"}}>
+      {cue.text}
+    </div>
+  );
+};
+
+const TitleCard: React.FC = () => {
+  const frame = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{opacity: interpolate(frame, [0, 9, 56, 66], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic)}), background: "radial-gradient(circle at 50% 40%,#164e63 0%,#07141b 48%,#020507 100%)", alignItems: "center", justifyContent: "center", padding: "120px 80px", color: "white", fontFamily: "Arial, 'Malgun Gothic', sans-serif"}}>
+      <div style={{fontSize: 30, fontWeight: 800, color: "#7dd3fc", letterSpacing: 4}}>WATCHMATCH · 무스포 추천</div>
+      <div style={{marginTop: 44, scale: interpolate(frame, [0, 66], [0.96, 1.03], {extrapolateLeft: "clamp", extrapolateRight: "clamp"}), fontSize: 94, fontWeight: 950, lineHeight: 1.12, letterSpacing: -6, textAlign: "center"}}>뒤바뀐 친구들의<br />신비한 모험</div>
+      <div style={{marginTop: 24, fontSize: 55, fontWeight: 800, color: "#fde68a"}}>2026</div>
+      <div style={{position: "absolute", left: 80, right: 80, bottom: 132, fontSize: 31, lineHeight: 1.45, fontWeight: 650, textAlign: "center", color: "rgba(255,255,255,.78)"}}>
+        AI가 제작한 비공식 무스포 추천 영상입니다.<br />실제 영화 이미지·영상·음성을 사용하지 않았습니다.
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const SwappedPilot: React.FC = () => {
+  const frame = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{backgroundColor: "#020507", overflow: "hidden"}}>
+      {SCENES.map((scene) => <Sequence key={scene.src} from={scene.from} durationInFrames={scene.duration} premountFor={15}><SceneVideo scene={scene} /></Sequence>)}
+      <Sequence from={834} durationInFrames={66} premountFor={15}><TitleCard /></Sequence>
+      {CUES.map((cue) => <Sequence key={cue.src} from={cue.startFrame} durationInFrames={cue.endFrame - cue.startFrame} premountFor={8}><Audio src={staticFile(cue.src)} volume={1} /></Sequence>)}
+      <Sequence from={0} durationInFrames={21}><Audio src={staticFile("sfx/low-hit.wav")} volume={0.72} /></Sequence>
+      <Sequence from={162} durationInFrames={24}><Audio src={staticFile("sfx/wing-whoosh.wav")} volume={0.55} /></Sequence>
+      <Sequence from={486} durationInFrames={45}><Audio src={staticFile("sfx/stream-rumble.wav")} volume={0.46} /></Sequence>
+      <Sequence from={648} durationInFrames={27}><Audio src={staticFile("sfx/wing-whoosh.wav")} volume={0.42} /></Sequence>
+      <Sequence from={834} durationInFrames={21}><Audio src={staticFile("sfx/low-hit.wav")} volume={0.58} /></Sequence>
+      {frame < 834 ? <AbsoluteFill style={{pointerEvents: "none"}}>
+        <div style={{position: "absolute", top: 82, left: 80, padding: "13px 23px 14px", borderRadius: 999, background: "rgba(8,145,178,.88)", border: "1px solid rgba(125,211,252,.58)", color: "white", fontFamily: "Arial, 'Malgun Gothic', sans-serif", fontSize: 31, fontWeight: 850}}>무스포 추천</div>
+        <NarrationCaption />
+        <div style={{position: "absolute", left: 80, right: 80, bottom: 70, height: 7, borderRadius: 999, background: "rgba(255,255,255,.18)", overflow: "hidden"}}><div style={{width: `${(frame / 899) * 100}%`, height: "100%", background: "linear-gradient(90deg,#0891b2,#fde68a)", boxShadow: "0 0 20px #22d3ee"}} /></div>
+      </AbsoluteFill> : null}
+    </AbsoluteFill>
+  );
+};

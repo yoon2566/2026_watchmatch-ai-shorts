@@ -69,3 +69,13 @@ npm.cmd test
 Replace the common hosted video sample with a local project API that sends only
 the selected Watchmode work ID to a canonical resolver, then runs the approved
 Grok CLI, Heami, Remotion, and FFmpeg pipeline.
+
+## Swapped Grok CLI pilot
+
+A second standalone golden sample was completed for `뒤바뀐 친구들의 신비한
+모험` (`Swapped`, 2026). Five original vertical Grok clips were assembled with
+local Heami narration, synthetic effects, Remotion, and FFmpeg. The finished
+MP4 is 1080x1920, 30 fps, 900 frames, 30.037 seconds, H.264/AAC, fully
+decodable, and SHA-256 verified. The run used no OpenRouter service or key and
+did not start a preview server. Generated media remains local and is not part
+of Git history.

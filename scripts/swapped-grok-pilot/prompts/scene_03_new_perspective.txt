@@ -1,0 +1,9 @@
+Load the bundled imagine skill and execute the requested media generation now. Do not use web search or web fetch. Create an entirely original family-adventure asset and do not copy any film frame, poster, logo, named character, species design, or recognizable location.
+
+Call image_edit exactly once using this canonical reference image: __RUN__\images\scene_01_swap_source.jpg
+
+Preserve the exact two original creature designs and the same stylized 3D rendering. Create a vertical ground-level shot beneath gigantic tree roots: the small russet forest-creature body now tries to stride with exaggerated dignity across wet leaves while the ivory-and-cobalt bird body carefully ducks under roots behind it. Their mismatched movements should feel funny and show that each is experiencing the other's scale. Emerald forest light, tactile moss, shallow depth of field, no text.
+
+Then call image_to_video exactly once using that edited image, prompt: "The tiny forest-creature body takes three overly proud steps, slips gently on one leaf and recovers, while the tall bird body ducks under a root and pauses; the camera tracks sideways once. Keep the characters stable and the comedy subtle.", duration 6, resolution_name "720p".
+
+After both tools succeed, use run_terminal_cmd only to copy the edited source image to __RUN__\images\scene_03_new_perspective_source.jpg and the generated video to __RUN__\clips\scene_03_new_perspective_grok.mp4. Verify both files exist and are non-empty. Return concise JSON with paths and tool parameters. Do not retry a safety, quota, permission, or Zero Data Retention error.

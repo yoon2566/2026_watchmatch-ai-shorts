@@ -275,3 +275,21 @@ Copy this section for future material changes:
 - Deployment: not requested and not performed.
 - Known limits and next task: generated media stays local; app integration requires
   a separately approved local project API and real job polling.
+
+## 2026-08-17 - Swapped Grok CLI standalone pilot
+
+- User request: produce a second real MP4 for `뒤바뀐 친구들의 신비한 모험`
+  with the installed Grok Build CLI, without OpenRouter and without a preview
+  server.
+- Decision: verify the public spoiler-free premise, create five original
+  character-consistent vertical scenes with Grok, then use local Heami,
+  synthesized effects, Remotion, and FFmpeg for the 30-second edit. Do not use
+  movie frames, posters, logos, dialogue, music, or actor voices.
+- Status: generated, visually reviewed, and fully validated locally.
+- Verification: five Grok source clips are 720x1280 H.264 at 24 fps and about
+  6.04 seconds; the final is 1080x1920, 30 fps, 900 frames, 30.037 seconds,
+  H.264/AAC, fully decodable, and SHA-256 verified. Ten captions are ordered;
+  title, disclosure, spoiler boundary, and no-OpenRouter trace checks pass.
+- Git scope: reproducible prompts, composition, render, verification, and
+  documentation only. Generated images, video, audio, and logs remain local.
+- Deployment: not requested and not performed. No preview server was started.

@@ -1,0 +1,9 @@
+Load the bundled imagine skill and execute the requested media generation now. Do not use web search or web fetch. Create an entirely original family-adventure asset and do not copy any film frame, poster, logo, named character, species design, or recognizable location.
+
+Call image_edit exactly once using this canonical reference image: __RUN__\images\scene_01_swap_source.jpg
+
+Preserve the exact two original creature designs and the same stylized 3D rendering. Create a vertical sunset cliff scene: the small russet forest-creature body and the ivory-and-cobalt bird body stand side by side at the edge of a broad glowing valley, facing a distant ring of blue-gold light between ancient trees. Their silhouettes show hesitation followed by trust, but do not reveal whether their bodies change back. Amber sunset, deep teal shadows, clean cinematic negative space, no text.
+
+Then call image_to_video exactly once using that edited image, prompt: "The two original creatures glance toward each other, take one synchronized step toward the distant blue-gold light, and stop as the valley wind moves fur and feathers; the camera slowly pulls back before a clean fade to black. Do not show another transformation.", duration 6, resolution_name "720p".
+
+After both tools succeed, use run_terminal_cmd only to copy the edited source image to __RUN__\images\scene_05_choice_source.jpg and the generated video to __RUN__\clips\scene_05_choice_grok.mp4. Verify both files exist and are non-empty. Return concise JSON with paths and tool parameters. Do not retry a safety, quota, permission, or Zero Data Retention error.
